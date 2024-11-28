@@ -3,8 +3,9 @@
 	import type { MedicationType } from '../types/index.svelte';
 	import MedicationRow from './MedicationRow.svelte';
 	import AddMedicationModal from './AddMedicationModal.svelte';
-	import {initialiseSdk} from "../../lib/cardinal";
+	import {initialiseSdk, searchMedications} from "../../lib/cardinal";
 	import {onMount} from "svelte";
+	import {Amp, type PaginatedListIterator} from "@icure/cardinal-be-sam";
 
 	let sdk: any;
 
@@ -13,8 +14,27 @@
 	});
 
 	let searchQuery: string | undefined = $state();
-	let active: boolean = $derived(!!searchQuery);
+	let dropdownDisplayed: boolean = $state(false);
 	let showModal = $state(false);
+	let displayedMedications: PaginatedListIterator<Amp> | undefined
+	let pages: MedicationType[][] = $state([]);
+
+	$effect(() => {
+		let q = searchQuery;
+		if (q && q.length >= 3) {
+			searchMedications(sdk, 'fr', q).then(async (medications) => {
+				displayedMedications = medications;
+				if (medications) {
+					pages = [(await medications.next(10)).flatMap((amp: Amp) => amp.ampps.map((ampp) => ({
+						id: amp.id,
+						title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
+						activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+						price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
+					})))]
+				}
+			});
+		}
+	});
 
 
 	const medications: MedicationType[] = [
@@ -43,7 +63,7 @@
 
 <div class='prescribeMedications'>
 
-	<div class:active class='prescribeMedications__search'>
+	<div class:dropdownDisplayed class='prescribeMedications__search'>
 		<label for='searchMedications'>Prescribe medications:</label>
 		<div class='prescribeMedications__search__input'>
 			<input id='searchMedications' type='text' placeholder='Find the drug' bind:value={searchQuery} />
@@ -52,8 +72,10 @@
 	</div>
 	{#if !!searchQuery}
 		<div class='prescribeMedications__dropdown'>
-			{#each medications as medication}
+			{#each pages as medicationPage}
+			{#each medicationPage as medication}
 				<MedicationRow {medication} onModifyPrescription={() => (showModal = true)} />
+			{/each}
 			{/each}
 		</div>
 	{/if}
@@ -118,7 +140,7 @@
         }
       }
 
-      &.active {
+      &.dropdownDisplayed {
         .prescribeMedications__search__input {
           border-color: $burgundy-900;
           border-radius: 6px 6px 0 0;

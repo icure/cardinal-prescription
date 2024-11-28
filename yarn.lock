@@ -199,12 +199,12 @@ __metadata:
 
 "@icure/cardinal-be-sam@file:./tsPackage::locator=cardinal-prescription%40workspace%3A.":
   version: 0.0.0-unspecified
-  resolution: "@icure/cardinal-be-sam@file:./tsPackage#./tsPackage::hash=e294a9&locator=cardinal-prescription%40workspace%3A."
+  resolution: "@icure/cardinal-be-sam@file:./tsPackage#./tsPackage::hash=1e393f&locator=cardinal-prescription%40workspace%3A."
   dependencies:
     "@js-joda/core": "npm:3.2.0"
     format-util: "npm:^1.0.5"
     ws: "npm:8.17.1"
-  checksum: 10c0/21016b6822594f0d79487aad619a651181754174e952029ebda02adc763459b02009ad3894082e5349108307c13bbb7c1e8467072733c63bb0cf7edef0702cad
+  checksum: 10c0/1e6b10ecf014cf370afccf1bafd486520098be7cbb0316cbdd12d92a6ce18e9c57c57e6ee43af61b2a37a2741d803bf22517243d7fde326b95490a24645dd44a
   languageName: node
   linkType: hard
 
