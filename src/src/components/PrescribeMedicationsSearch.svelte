@@ -21,23 +21,27 @@
 	let pages: MedicationType[][] = $state([]);
 	let newPages: MedicationType[][] = $state([]);
 
+	async function loadPage(medications: PaginatedListIterator<Amp>) {
+		const now = Date.now()
+		const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
+		return (await medications.next(10)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+			return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
+		}).map((ampp) => ({
+			ampId: amp.id,
+			id: ampp.ctiExtended,
+			title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
+			activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+			price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
+		})));
+	}
+
 	$effect(() => {
 		let q = searchQuery;
 		if (q && q.length >= 3) {
 			searchMedications(sdk, 'fr', q).then(async (medications) => {
 				displayedMedications = medications;
 				if (medications) {
-                    const now = Date.now()
-                    const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
-                    const firstPage = (await medications.next(10)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
-                        return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
-                    }).map((ampp) => ({
-                        ampId: amp.id,
-                        id: ampp.ctiExtended,
-                        title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
-                        activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-                        price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
-                    })));
+                    const firstPage = await loadPage(medications);
                     pages = [firstPage]
 				}
 			});
@@ -46,14 +50,7 @@
 
 	const loadMore = async () => {
 		if (displayedMedications) {
-			newPages = [(await displayedMedications.next(10))?.flatMap((amp: Amp) => amp.ampps.map((ampp) => {
-				return {
-					id: amp.id,
-					title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
-					activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-					price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
-				} as MedicationType
-			}))]
+			newPages = [loadPage(displayedMedications)]
 			pages = [...pages, ...newPages]
 		}
 	}
