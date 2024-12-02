@@ -21,7 +21,7 @@
 </div>
 
 <style lang='scss'>
-  @import '../../../style/app';
+	@use '../../../style/app';
 
   .switch {
     width: 100%;
@@ -35,7 +35,7 @@
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      color: $gray-800;
+      color: app.$gray-800;
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
@@ -50,7 +50,7 @@
       align-self: stretch;
 
       p {
-        color: $gray-600;
+        color: app.$gray-600;
         opacity: 0.7;
         font-size: 14px;
         line-height: 22px; /* 157.143% */
@@ -58,7 +58,7 @@
 
       &.checked {
         p {
-          color: $gray-800;
+          color: app.$gray-800;
           opacity: 1;
         }
       }
@@ -75,7 +75,7 @@
           height: 0;
 
           &:checked + .slider {
-            background-color: $burgundy-900;
+            background-color: app.$burgundy-900;
 
             &:before {
               -webkit-transform: translateX(22px);
@@ -85,7 +85,7 @@
           }
 
           &:focus + .slider {
-            box-shadow: 0 0 1px $burgundy-900;
+            box-shadow: 0 0 1px app.$burgundy-900;
           }
         }
 
@@ -97,7 +97,7 @@
           left: 0;
           right: 0;
           bottom: 0;
-          background-color: $gray-550;
+          background-color: app.$gray-550;
           -webkit-transition: .4s;
           transition: .4s;
           border-radius: 34px;

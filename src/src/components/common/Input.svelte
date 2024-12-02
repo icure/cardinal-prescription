@@ -18,7 +18,7 @@
 </div>
 
 <style lang='scss'>
-  @import '../../../style/app';
+  @use '../../../style/app';
 
   .inputWrapper {
     width: 100%;
@@ -32,7 +32,7 @@
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      color: $gray-800;
+      color: app.$gray-800;
       font-size: 14px;
       font-style: normal;
       font-weight: 600;
@@ -60,11 +60,11 @@
       cursor: pointer !important;
 
       border-radius: 6px;
-      border: 1px solid $gray-400;
+      border: 1px solid app.$gray-400;
       background: #FFF;
       box-shadow: 0 1px 1px 0 rgba(218, 218, 222, 0.25);
 
-      color: $gray-600;
+      color: app.$gray-600;
       font-family: 'Inter Variable', sans-serif;
       font-size: 14px;
       font-style: normal;
@@ -73,24 +73,24 @@
 
 
       &::placeholder {
-        color: $gray-600;
+        color: app.$gray-600;
         font-family: 'Inter Variable', sans-serif;
         opacity: 0.7;
         font-size: 14px;
       }
 
       &:hover {
-        border-color: $burgundy-900;
+        border-color: app.$burgundy-900;
       }
 
       &.disabled {
         cursor: not-allowed;
-        background-color: rgba($gray-500, 0.7);
-        border-color: $gray-400;
+        background-color: rgba(app.$gray-500, 0.7);
+        border-color: app.$gray-400;
         opacity: 0.7;
 
         &:hover {
-          border-color: $gray-400;
+          border-color: app.$gray-400;
         }
       }
     }

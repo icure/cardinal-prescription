@@ -5,7 +5,7 @@
 	import AddMedicationModal from './AddMedicationModal.svelte';
 	import {initialiseSdk, searchMedications} from "../../lib/cardinal";
 	import {onMount} from "svelte";
-	import {Amp, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+	import {Amp, AmpStatus, type PaginatedListIterator} from "@icure/cardinal-be-sam";
 
 	let sdk: any;
 
@@ -25,38 +25,23 @@
 			searchMedications(sdk, 'fr', q).then(async (medications) => {
 				displayedMedications = medications;
 				if (medications) {
-					pages = [(await medications.next(10)).flatMap((amp: Amp) => amp.ampps.map((ampp) => ({
-						id: amp.id,
-						title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
+					const now = Date.now()
+					const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
+					const firstPage = (await medications.next(10)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+						return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
+					}).map((ampp) => ({
+						ampId: amp.id,
+						id: ampp.ctiExtended,
+						title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
 						activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
 						price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
-					})))]
+					})));
+					pages = [firstPage]
 				}
 			});
 		}
 	});
 
-
-	const medications: MedicationType[] = [
-		{
-			id: '0',
-			title: 'Nuralgan 500/200 compr. pellic. 90x',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€8.45'
-		},
-		{
-			id: '0',
-			title: 'Nuralgan 1000',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€12.5'
-		},
-		{
-			id: '0',
-			title: 'Nuralgan 100',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€3.2'
-		}
-	];
 
 
 </script>
@@ -85,7 +70,7 @@
 
 
 <style lang='scss'>
-  @import '../../style/app';
+  @use '../../style/app';
 
   .prescribeMedications {
     display: flex;
@@ -101,7 +86,7 @@
       width: 100%;
 
       label {
-        color: $gray-900;
+        color: app.$gray-900;
         font-size: 16px;
         font-style: normal;
         font-weight: 700;
@@ -117,23 +102,23 @@
         align-self: stretch;
 
         border-radius: 6px;
-        border: 1px solid $gray-300;
+        border: 1px solid app.$gray-300;
         background: #FFF;
 
         &:hover {
-          border-color: $burgundy-900;
+          border-color: app.$burgundy-900;
         }
 
         input {
           border: none;
           width: 100%;
-          color: $gray-900;
+          color: app.$gray-900;
           font-size: 14px;
           font-style: normal;
           font-weight: 400;
 
           &::placeholder {
-            color: $gray-600;
+            color: app.$gray-600;
             opacity: 0.7;
             font-size: 14px;
           }
@@ -142,7 +127,7 @@
 
       &.dropdownDisplayed {
         .prescribeMedications__search__input {
-          border-color: $burgundy-900;
+          border-color: app.$burgundy-900;
           border-radius: 6px 6px 0 0;
         }
       }
@@ -156,7 +141,7 @@
       align-self: stretch;
 
       border-radius: 0 0 6px 6px;
-      border: 1px solid $burgundy-900;
+      border: 1px solid app.$burgundy-900;
       border-top: none;
       background: #FFF;
     }

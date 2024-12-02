@@ -174,7 +174,7 @@
 </dialog>
 
 <style lang='scss'>
-  @import '../../style/app';
+  @use '../../style/app';
 
   dialog {
     width: 900px;
@@ -215,11 +215,11 @@
       align-self: stretch;
 
       border-radius: 8px 8px 0px 0px;
-      border-bottom: 1px solid $gray-300;
+      border-bottom: 1px solid app.$gray-300;
       background: #FFF;
 
       h3 {
-        color: $gray-900;
+        color: app.$gray-900;
         font-size: 16px;
         font-style: normal;
         font-weight: 500;
@@ -237,7 +237,7 @@
         border-radius: 4px;
 
         &:hover {
-          background-color: rgba($gray-300, 0.4);
+          background-color: rgba(app.$gray-300, 0.4);
         }
       }
     }
@@ -248,7 +248,7 @@
       flex-direction: column;
       align-items: flex-start;
       flex: 1 0 0;
-      background-color: $gray-50;
+      background-color: app.$gray-50;
 
       &__content {
         display: flex;
@@ -259,7 +259,7 @@
         align-self: stretch;
 
         &.withBorderBottom {
-          border-bottom: 1px dashed $gray-400;
+          border-bottom: 1px dashed app.$gray-400;
         }
 
         &__fieldsGroup {
@@ -279,7 +279,7 @@
       align-items: flex-start;
       gap: 12px;
       align-self: stretch;
-      border-top: 1px solid $gray-300;
+      border-top: 1px solid app.$gray-300;
       background: #FFF;
     }
 

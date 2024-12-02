@@ -19,7 +19,7 @@
 </div>
 
 <style lang='scss'>
-  @import '../../../style/app';
+	@use '../../../style/app';
 
   .tooltip {
     display: flex;
@@ -33,7 +33,7 @@
         height: 0;
         border-left: 7px solid transparent;
         border-right: 7px solid transparent;
-        border-top: 7px solid $burgundy-900;
+        border-top: 7px solid app.$burgundy-900;
 
         position: absolute;
         bottom: 25px;
@@ -57,7 +57,7 @@
       flex-direction: column;
 
       &__text {
-        background-color: $burgundy-900;
+        background-color: app.$burgundy-900;
 
         min-height: 32px;
         width: auto;

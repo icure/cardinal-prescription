@@ -53,7 +53,7 @@
 </div>
 
 <style lang='scss'>
-  @import '../../style/app';
+  @use '../../style/app';
 
   .tooltipBtn {
     width: 22px;
@@ -66,7 +66,7 @@
     cursor: pointer;
 
     &:hover {
-      border-color: $orange;
+      border-color: app.$orange;
     }
   }
 
@@ -76,12 +76,12 @@
     padding: 12px 18px;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid $gray-400;
+    border-bottom: 1px solid app.$gray-400;
     background-color: white;
     cursor: pointer;
 
     &:hover {
-      background-color: $gray-200;
+      background-color: app.$gray-200;
     }
 
     &__leftBlock {
@@ -102,10 +102,10 @@
         cursor: pointer;
 
         border-radius: 3px;
-        background: $burgundy-900;
+        background: app.$burgundy-900;
 
         &:hover {
-          background: $burgundy-800;
+          background: app.$burgundy-800;
         }
       }
     }
@@ -123,7 +123,7 @@
         gap: 8px;
 
         p {
-          color: $gray-900;
+          color: app.$gray-900;
           font-size: 16px;
           font-style: normal;
           font-weight: 600;
@@ -138,7 +138,7 @@
 
       &__subtitle {
         p {
-          color: $gray-900;
+          color: app.$gray-900;
           font-size: 14px;
           font-style: normal;
           font-weight: 300;
@@ -160,7 +160,7 @@
         align-items: center;
 
         border-radius: 3px;
-        background: $gray-600;
+        background: app.$gray-600;
 
         color: #FFF;
         font-size: 12px;
@@ -170,7 +170,7 @@
       }
 
       &__value {
-        color: $orange;
+        color: app.$orange;
         font-size: 16px;
         font-style: normal;
         font-weight: 600;
