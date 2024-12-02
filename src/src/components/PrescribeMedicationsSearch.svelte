@@ -6,6 +6,7 @@
 	import {initialiseSdk, searchMedications} from "../../lib/cardinal";
 	import {onMount} from "svelte";
 	import {Amp, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+	import InfiniteScroll from "./InfiniteScroll.svelte";
 
 	let sdk: any;
 
@@ -14,10 +15,11 @@
 	});
 
 	let searchQuery: string | undefined = $state();
-	let dropdownDisplayed: boolean = $state(false);
+	let dropdownDisplayed: boolean = $derived(!!searchQuery);
 	let showModal = $state(false);
 	let displayedMedications: PaginatedListIterator<Amp> | undefined
 	let pages: MedicationType[][] = $state([]);
+	let newPages: MedicationType[][] = $state([]);
 
 	$effect(() => {
 		let q = searchQuery;
@@ -25,38 +27,32 @@
 			searchMedications(sdk, 'fr', q).then(async (medications) => {
 				displayedMedications = medications;
 				if (medications) {
-					pages = [(await medications.next(10)).flatMap((amp: Amp) => amp.ampps.map((ampp) => ({
-						id: amp.id,
-						title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
-						activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-						price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
-					})))]
+					pages = [(await medications.next(10)).flatMap((amp: Amp) => amp.ampps.map((ampp) => {
+						return {
+							id: amp.id,
+							title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
+							activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+							price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
+						}
+					}))]
 				}
 			});
 		}
 	});
 
-
-	const medications: MedicationType[] = [
-		{
-			id: '0',
-			title: 'Nuralgan 500/200 compr. pellic. 90x',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€8.45'
-		},
-		{
-			id: '0',
-			title: 'Nuralgan 1000',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€12.5'
-		},
-		{
-			id: '0',
-			title: 'Nuralgan 100',
-			activeIngredient: 'paracétamol + ibuprofène oral 500 mg + 200 mg',
-			price: '€3.2'
+	const loadMore = async () => {
+		if (displayedMedications) {
+			newPages = [(await displayedMedications.next(10))?.flatMap((amp: Amp) => amp.ampps.map((ampp) => {
+				return {
+					id: amp.id,
+					title: amp.abbreviatedName?.fr ?? amp.name?.fr ?? '',
+					activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+					price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
+				} as MedicationType
+			}))]
+			pages = [...pages, ...newPages]
 		}
-	];
+	}
 
 
 </script>
@@ -64,19 +60,22 @@
 <div class='prescribeMedications'>
 
 	<div class:dropdownDisplayed class='prescribeMedications__search'>
-		<label for='searchMedications'>Prescribe medications:</label>
-		<div class='prescribeMedications__search__input'>
+		<p class='prescribeMedications__search' >Prescribe medications:</p>
+		<label for='searchMedications' class='prescribeMedications__search__inputWrap'>
 			<input id='searchMedications' type='text' placeholder='Find the drug' bind:value={searchQuery} />
 			<SearchIcn />
-		</div>
+		</label>
 	</div>
-	{#if !!searchQuery}
+	{#if dropdownDisplayed}
 		<div class='prescribeMedications__dropdown'>
 			{#each pages as medicationPage}
 			{#each medicationPage as medication}
 				<MedicationRow {medication} onModifyPrescription={() => (showModal = true)} />
 			{/each}
 			{/each}
+			<InfiniteScroll
+				threshold={50}
+				loadMore={() => loadMore()} />
 		</div>
 	{/if}
 </div>
@@ -100,14 +99,14 @@
       justify-content: flex-start;
       width: 100%;
 
-      label {
+      &__label {
         color: $gray-900;
         font-size: 16px;
         font-style: normal;
         font-weight: 700;
       }
 
-      &__input {
+      &__inputWrap {
         width: 100%;
         display: flex;
         height: 40px;
@@ -141,7 +140,7 @@
       }
 
       &.dropdownDisplayed {
-        .prescribeMedications__search__input {
+        .prescribeMedications__search__inputWrap {
           border-color: $burgundy-900;
           border-radius: 6px 6px 0 0;
         }
@@ -150,6 +149,9 @@
 
     &__dropdown {
       width: 100%;
+		height: auto;
+		max-height: 380px;
+		overflow-y: scroll;
       display: flex;
       flex-direction: column;
       align-items: flex-start;

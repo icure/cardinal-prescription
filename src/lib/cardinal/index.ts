@@ -11,8 +11,6 @@ export const initialiseSdk = async () => {
                 '75b00167-a1e3-4825-b262-396617c71cab'
             )
         );
-        const test = await sdk.sam.getSamVersion();
-        console.log(test);
         return sdk.sam as SamV2Api;
     } catch (error) {
         console.error('Error initializing SDK:', error);
