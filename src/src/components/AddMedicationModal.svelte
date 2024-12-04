@@ -1,34 +1,17 @@
-<script>
+<script lang="ts">
 	import { CloseIcn } from '../icons/index.svelte';
 	import Button from './common/Button.svelte';
 	import Input from './common/Input.svelte';
 	import Switch from './common/Switch.svelte';
 	import Select from './common/Select.svelte';
 	import Textarea from './common/Textarea.svelte';
+	import type {MedicationType} from "../types/index.svelte";
 
-	let { showModal = $bindable() } = $props();
+	let { showModal = $bindable(), selectedMedication }:{showModal: boolean, selectedMedication: MedicationType} = $props();
 
-	let dialog = $state(); // HTMLDialogElement
-	const defaultDrug = 'Ibuprofène oral 200 mg [CAVE séc., solide/liq.]';
+	let dialog: HTMLDialogElement | undefined = $state();
+	const medicationTitle = selectedMedication.title;
 
-	const dosageTimeUnits = [
-		{
-			id: '0',
-			text: 'par jour'
-		},
-		{
-			id: '1',
-			text: 'par semaine'
-		},
-		{
-			id: '2',
-			text: 'par mois'
-		},
-		{
-			id: '3',
-			text: 'une fois'
-		}
-	];
 	const durationTimeUnits = [
 		{
 			id: '0',
@@ -75,100 +58,141 @@
 			text: 'Visible uniquement pour le titulaire du DMG'
 		}
 	];
-	let showDosageExpanded = $state();
-	let dosagePerTimeUnit = $state(1);
-	let dosageFrequency = $state(1);
-	let dosageTimeUnit = $state(dosageTimeUnits[0]);
-	let dosage = $state();
-	let duration = $state(1);
-	let durationTimeUnit = $state(durationTimeUnits[0]);
-	let instructionsForPatient = $state();
-	let refundInstructions = $state();
-	let executableUntil = $state();
-	let prescriptionsNumber = $state();
-	let periodicityTimeUnit = $state(periodicityTimeUnits[0]);
-	let periodicityDaysNumber = $state();
-	let treatmentStartDate = $state();
-	let prescriberVisibility = $state(prescriberVisibilityOptions[0]);
-	let pharmacyVisibility = $state(true);
+	const pharmacyVisibilityOptions = [
+		{
+			id: '0',
+			text: 'Le médicament est visible par tous les pharmaciens'
+		},
+		{
+			id: '1',
+			text: 'Le médicament n`est pas visible par tous les pharmaciens'
+		},
+	];
+
+	// Get today's date
+	const today = new Date();
+
+	// Calculate the date one year from today
+	const nextYear = new Date(today);
+	nextYear.setFullYear(today.getFullYear() + 1);
+
+	// Format the dates as YYYY-MM-DD
+	const formattedToday = today.toISOString().split('T')[0];
+	const formattedNextYear = nextYear.toISOString().split('T')[0];
+
+	let dosage: string | undefined = $state();
+	let duration: number | undefined = $state(1);
+	let durationTimeUnit: {id: string, text: string} = $state(durationTimeUnits[0]);
+	let instructionsForPatient : string | undefined = $state();
+	let refundInstructions: string | undefined = $state();
+
+	let treatmentStartDate: string | undefined = $state(formattedToday);
+	let executableUntil: string | undefined = $state(formattedNextYear);
+
+	let prescriptionsNumber: number | undefined = $state(0);
+	let periodicityTimeUnit: {id: string, text: string} = $state(periodicityTimeUnits[0]);
+	let periodicityDaysNumber: number | undefined = $state();
+	let prescriberVisibility: {id: string, text: string} = $state(prescriberVisibilityOptions[0]);
+	let pharmacyVisibility: {id: string, text: string} = $state(pharmacyVisibilityOptions[0]);
+
+	let showExtraFields = $state(false);
 
 	$effect(() => {
-		if (showModal) dialog.showModal();
-
-		dosage = dosagePerTimeUnit + ' x ' + dosageFrequency + ' ' + dosageTimeUnit.text;
+		if (showModal) dialog?.showModal();
 	});
 </script>
 
-<dialog bind:this={dialog}
-				onclose={() => (showModal = false)}
-				onclick={(e) => { if (e.target === dialog) dialog.close(); }}>
+
+
+<dialog
+		bind:this={dialog}
+		onclose={() => (showModal = false)}
+		onclick={(e) => { if (e.target === dialog) dialog.close(); }}
+>
 	<div class='addMedicationModal'>
 		<div class='addMedicationModal__header'>
 			<h3>Modifier la prescription</h3>
-			<button class='addMedicationModal__header__closeIcn' onclick={() => dialog.close()}>
+			<button class='addMedicationModal__header__closeIcn' onclick={() => dialog?.close()}>
 				<CloseIcn />
 			</button>
 		</div>
 		<div class='addMedicationModal__body'>
-			<div class='addMedicationModal__body__content withBorderBottom'>
-				<Input label='Nom groupe DCI' defaultValue={defaultDrug} required
-							 disabled
-							 id='drugName' />
-				<Input label='Posologie' required
-							 id='dosage' defaultValue={dosage} />
-				<Switch id='dosageExpanded' value='Posologie structurée'
-								bind:checked={showDosageExpanded} />
-				{#if showDosageExpanded}
-					<div class='addMedicationModal__body__content__fieldsGroup'>
-						<Input label='Dose' bind:defaultValue={dosagePerTimeUnit} required
-									 id='dosePerTimeUnit' type='number' min={1} />
-						<Input label='Fréquence' bind:defaultValue={dosageFrequency} required
-									 id='frequency' type='number' min={1} />
-						<Select label='Unité de temps' bind:defaultValue={dosageTimeUnit} required
-										id='dosageTimeUnit' options={dosageTimeUnits} />
-					</div>
-				{/if}
-				<div class='addMedicationModal__body__content__fieldsGroup'>
-					<Input label='Durée (nombre d’unités)' bind:defaultValue={duration} required
-								 id='duration' type='number' min={1} />
-					<Select label='Unité de temps' bind:defaultValue={durationTimeUnit} required
-									id='durationTimeUnit' options={durationTimeUnits} />
-				</div>
-				<Textarea label='Instructions pour le patient' id='instructionsForPatient'
-									bind:defaultValue={instructionsForPatient} />
-				<Textarea label='Instructions remboursement' id='refundInstructions'
-									bind:defaultValue={refundInstructions} />
-			</div>
-
 			<div class='addMedicationModal__body__content'>
-				<Input label='Exécutable jusqu`au' bind:defaultValue={executableUntil} required
-							 id='executableUntil' type='date' />
-				<div class='addMedicationModal__body__content__fieldsGroup'>
-					<Input label='Nombre de prescriptions' bind:defaultValue={prescriptionsNumber} required
-								 id='prescriptionsNumber' type='number' min={1} max={12} />
-					{#if prescriptionsNumber > 1}
-						<Select label='Périodicité' bind:defaultValue={periodicityTimeUnit} required
-										id='periodicity' options={periodicityTimeUnits} />
-					{/if}
-					{#if periodicityTimeUnit.text === 'x nombre de jours'}
-						<Input label='Nombre de jours' bind:defaultValue={periodicityDaysNumber} required
-									 id='daysNumber' type='number' min={1} />
-					{/if}
+				<div class='addMedicationModal__body__content__inputs'>
+					<Input label='Nom groupe DCI' defaultValue={medicationTitle} required
+						   disabled
+						   id='drugName' />
+					<Input label='Posologie' required
+								 id='dosage' defaultValue={dosage} />
+					<div class='addMedicationModal__body__content__inputs__group'>
+						<Input label='Durée (nombre d’unités)' bind:defaultValue={duration} required
+									 id='duration' type='number' min={1} />
+						<Select label='Unité de temps' bind:defaultValue={durationTimeUnit} required
+										id='durationTimeUnit' options={durationTimeUnits} />
+					</div>
+					<div class='addMedicationModal__body__content__inputs__group'>
+						<Input label='Date début du traitement' bind:defaultValue={treatmentStartDate}
+							   id='treatmentStartDate' type='date' />
+						<Input label='Exécutable jusqu`au' bind:defaultValue={executableUntil} required
+							   id='executableUntil' type='date' />
+					</div>
+
 				</div>
-				<Input label='Date début du traitement' bind:defaultValue={treatmentStartDate} required
-							 id='treatmentStartDate' type='date' />
-
-				<Select label='Visibilité prescripteur' bind:defaultValue={prescriberVisibility} required
-								id='prescriberVisibility' options={prescriberVisibilityOptions} />
-
-				<Switch id='pharmacyVisibility' value='Le médicament est visible par tous les pharmaciens'
-								label='Visibilitée officine'
-								bind:checked={pharmacyVisibility} />
 			</div>
+			<Switch id='showExtraFields' value='Afficher plus'
+					bind:checked={showExtraFields} />
+			{#if !showExtraFields}
+				<div class="addMedicationModal__body__extraFieldsPreview">
+					{#if !!instructionsForPatient}
+						<p>{instructionsForPatient}</p>
+					{/if}
+					{#if !!refundInstructions}
+						<p>{refundInstructions}</p>
+					{/if}
+					{#if !!prescriptionsNumber}
+						<p>{prescriptionsNumber}</p>
+						<p>{periodicityTimeUnit.text ?? ''}</p>
+						<p>{periodicityDaysNumber ?? ''}</p>
+					{/if}
+					{#if !!prescriberVisibility}
+						<p>{prescriberVisibility.text}</p>
+					{/if}
+					{#if !!pharmacyVisibility}
+						<p>{pharmacyVisibility.text}</p>
+					{/if}
+					<p></p>
+				</div>
+			{:else}
+				<div class='addMedicationModal__body__content'>
+					<div class='addMedicationModal__body__content__inputs'>
+					<Textarea label='Instructions pour le patient' id='instructionsForPatient'
+							  bind:defaultValue={instructionsForPatient} />
+					<Textarea label='Instructions remboursement' id='refundInstructions'
+							  bind:defaultValue={refundInstructions} />
+					<div class='addMedicationModal__body__content__inputs__group'>
+						<Input label='Nombre de prescriptions' bind:defaultValue={prescriptionsNumber}
+									 id='prescriptionsNumber' type='number' min={1} max={12} />
+						{#if prescriptionsNumber && prescriptionsNumber > 1}
+							<Select label='Périodicité' bind:defaultValue={periodicityTimeUnit}
+											id='periodicity' options={periodicityTimeUnits} />
+						{/if}
+						{#if periodicityTimeUnit.text === 'x nombre de jours'}
+							<Input label='Nombre de jours' bind:defaultValue={periodicityDaysNumber}
+										 id='daysNumber' type='number' min={1} />
+						{/if}
+					</div>
+					<Select label='Visibilité prescripteur' bind:defaultValue={prescriberVisibility}
+									id='prescriberVisibility' options={prescriberVisibilityOptions} />
+					<Select label='Visibilité officine' bind:defaultValue={pharmacyVisibility}
+							id='pharmacyVisibility' options={pharmacyVisibilityOptions} />
+
+					</div>
+				</div>
+			{/if}
 		</div>
 		<div class='addMedicationModal__footer'>
-			<Button title='Cancel' onclick={() => { dialog.close() } } type='outlined' />
-			<Button title='Save' onclick={() => console.log('Save') } type='primary' />
+			<Button title='Cancel' handleClick={() => { dialog?.close() } } type='outlined' />
+			<Button title='Save' handleClick={() => console.log('Save') } type='primary' />
 		</div>
 	</div>
 </dialog>
@@ -177,7 +201,8 @@
   @use '../../style/app';
 
   dialog {
-    width: 900px;
+  	width: 100%;
+    max-width: 900px;
     height: 100%;
     max-height: 100%;
     border-radius: 0.2em;
@@ -243,33 +268,93 @@
     }
 
     &__body {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      flex: 1 0 0;
-      background-color: app.$gray-50;
+	width: 100%;
+	padding: 24px 32px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	align-self: stretch;
+	flex: 1 0 0;
+	gap: 12px;
+	background-color: app.$gray-50;
 
-      &__content {
+	&__divider {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			align-self: stretch;
+			overflow: hidden;
+
+			&__btnHolder{
+				position: relative;
+				&::before, &::after {
+					content: '';
+					display: block;
+					height: 1px;
+					width: 320px;
+					border-bottom: 1px dashed app.$gray-400;
+					position: absolute;
+					top: 50%;
+				}
+
+				&::before{
+					left: -330px;
+				}
+
+				&::after{
+					right: -330px;
+				}
+			}
+		}
+	&__content {
         display: flex;
-        padding: 24px;
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
         align-self: stretch;
+	  border-radius: 12px;
+	  border: 1px solid app.$gray-300;
+	  background: #FFF;
 
-        &.withBorderBottom {
-          border-bottom: 1px dashed app.$gray-400;
-        }
+		  &__inputs{
+			  display: flex;
+			  padding: 24px;
+			  flex-direction: column;
+			  align-items: flex-start;
+			  gap: 12px;
+			  align-self: stretch;
 
-        &__fieldsGroup {
-          width: 100%;
-          display: flex;
-          align-items: flex-end;
-          gap: 4px;
-          align-self: stretch;
-        }
+			  &__group {
+				  width: 100%;
+				  display: flex;
+				  align-items: flex-end;
+				  gap: 4px;
+				  align-self: stretch;
+			  }
+		  }
       }
+	&__extraFieldsPreview{
+		display: flex;
+		width: 100%;
+		padding: 12px;
+		flex-direction: column;
+		align-items: flex-start;
+		align-self: stretch;
+
+		border-radius: 12px;
+		border: 1px solid app.$gray-300;
+		background: #FFF;
+		box-shadow: 0px 1px 1px 0px rgba(218, 218, 222, 0.25);
+
+		p {
+			color: rgba(app.$gray-600, 0.70);
+			font-size: 14px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: 22px; /* 169.231% */
+		}
+	}
     }
 
     &__footer {

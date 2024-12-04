@@ -28,7 +28,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 2px;
     align-self: stretch;
 
     &__label {

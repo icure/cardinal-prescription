@@ -3,7 +3,7 @@
 	import Tooltip from './common/Tooltip.svelte';
 	import { GlobeIcn, PillIcn, PlusIcn } from '../icons/index.svelte';
 
-	let { medication, onModifyPrescription }: { medication: MedicationType, onModifyPrescription: () => void } = $props();
+	let { medication, onModifyPrescription }: { medication: MedicationType, onModifyPrescription: (medication: MedicationType) => void } = $props();
 
 </script>
 
@@ -26,7 +26,7 @@
 
 <div class='medicationRow'>
 	<div class='medicationRow__leftBlock'>
-		<div class='medicationRow__btnsRow' role='button' onclick={onModifyPrescription}>
+		<div class='medicationRow__btnsRow' role='button' onclick={() => onModifyPrescription(medication)}>
 			<Tooltip content='Modify the prescription' iconSnippet={plusIcon} />
 		</div>
 		<div class='medicationRow__content'>

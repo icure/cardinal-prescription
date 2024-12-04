@@ -3,8 +3,8 @@
 		label: string,
 		id: string,
 		required?: boolean,
-		disabled?: boolean
-		defaultValue: { id: string, text: string }
+		disabled?: boolean,
+		defaultValue?:  string
 	} = $props();
 </script>
 
@@ -21,7 +21,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 2px;
     align-self: stretch;
 
     label {
