@@ -68,14 +68,26 @@
 			text: 'Le médicament n`est pas visible par tous les pharmaciens'
 		},
 	];
+
+	// Get today's date
+	const today = new Date();
+
+	// Calculate the date one year from today
+	const nextYear = new Date(today);
+	nextYear.setFullYear(today.getFullYear() + 1);
+
+	// Format the dates as YYYY-MM-DD
+	const formattedToday = today.toISOString().split('T')[0];
+	const formattedNextYear = nextYear.toISOString().split('T')[0];
+
 	let dosage: string | undefined = $state();
 	let duration: number | undefined = $state(1);
 	let durationTimeUnit: {id: string, text: string} = $state(durationTimeUnits[0]);
 	let instructionsForPatient : string | undefined = $state();
 	let refundInstructions: string | undefined = $state();
 
-	let treatmentStartDate: string | undefined = $state(new Date().toJSON().slice(0, 10));
-	let executableUntil: string | undefined = $state();
+	let treatmentStartDate: string | undefined = $state(formattedToday);
+	let executableUntil: string | undefined = $state(formattedNextYear);
 
 	let prescriptionsNumber: number | undefined = $state(0);
 	let periodicityTimeUnit: {id: string, text: string} = $state(periodicityTimeUnits[0]);
