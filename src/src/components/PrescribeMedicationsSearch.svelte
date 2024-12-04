@@ -20,6 +20,7 @@
     let displayedMedications: PaginatedListIterator<Amp> | undefined
     let pages: MedicationType[][] = $state([]);
     let newPages: MedicationType[][] = $state([]);
+    let selectedMedication: MedicationType | undefined = $state()
 
     async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
         const now = Date.now()
@@ -80,7 +81,12 @@
         <div class='prescribeMedications__dropdown'>
             {#each pages as medicationPage}
                 {#each medicationPage as medication}
-                    <MedicationRow {medication} onModifyPrescription={() => (showModal = true)}/>
+                    <MedicationRow
+                            {medication}
+                            onModifyPrescription={(medication: MedicationType) => {
+                                showModal = true
+                                selectedMedication = medication;
+                            }}/>
                 {/each}
             {/each}
             <InfiniteScroll
@@ -90,7 +96,9 @@
     {/if}
 </div>
 
-<AddMedicationModal bind:showModal/>
+{#if !!selectedMedication}
+    <AddMedicationModal bind:showModal {selectedMedication}/>
+{/if}
 
 
 <style lang='scss'>
@@ -99,7 +107,8 @@
   .prescribeMedications {
     display: flex;
     flex-direction: column;
-    width: 600px;
+    width: 100%;
+    max-width: 700px;
 
     &__search {
       display: flex;

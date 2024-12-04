@@ -3,7 +3,7 @@
 		label: string,
 		id: string,
 		required?: boolean,
-		defaultValue?: string
+		defaultValue?: string | number | Date
 		disabled?: boolean
 		type?: 'text' | 'number' | 'date'
 		min?: number
@@ -25,7 +25,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 2px;
     align-self: stretch;
 
     label {

@@ -5,7 +5,7 @@
 		required?: boolean,
 		disabled?: boolean
 		options: { id: string, text: string }[]
-		defaultValue: { id: string, text: string }
+		defaultValue?: { id: string, text: string }
 	} = $props();
 </script>
 
@@ -28,7 +28,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 2px;
     align-self: stretch;
 
     label {
