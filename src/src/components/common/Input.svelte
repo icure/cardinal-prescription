@@ -1,5 +1,5 @@
 <script lang='ts'>
-	let { label, required, id, defaultValue = $bindable(), disabled, type = 'text', min, max }: {
+	let { label, required, id, defaultValue = $bindable(), disabled, type = 'text', min, max, errorMessage }: {
 		label: string,
 		id: string,
 		required?: boolean,
@@ -8,14 +8,19 @@
 		type?: 'text' | 'number' | 'date'
 		min?: number
 		max?: number
+		errorMessage?: string
 	} = $props();
 </script>
 
 <div class='inputWrapper'>
 	<label class:required for={id}><span>*</span>{label}</label>
-	<input class:disabled {id} name={id} placeholder={label} {required} {type} bind:value={defaultValue}
+	<input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={defaultValue}
 				 {disabled} {min} {max} />
+	{#if !!errorMessage}
+		<p class='inputWrapper__error'>{errorMessage}</p>
+	{/if}
 </div>
+
 
 <style lang='scss'>
   @use '../../../style/app';
@@ -75,7 +80,7 @@
       &::placeholder {
         color: app.$gray-600;
         font-family: 'Inter Variable', sans-serif;
-        opacity: 0.7;
+        opacity: 0.5;
         font-size: 14px;
       }
 
@@ -93,8 +98,15 @@
           border-color: app.$gray-400;
         }
       }
+
+		&.errorMessage{
+			border-color: red;
+		}
     }
 
-
+	&__error{
+		color: red;
+		font-size: 13px;
+	}
   }
 </style>

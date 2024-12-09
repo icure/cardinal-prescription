@@ -12,104 +12,104 @@
 	let dialog: HTMLDialogElement | undefined = $state();
 	const medicationTitle = selectedMedication.title;
 
-	const durationTimeUnits = [
-		{
-			id: '0',
-			text: 'jour'
-		},
-		{
-			id: '1',
-			text: 'semaine'
-		}
-	];
-	const periodicityTimeUnits = [
-		{
-			id: '0',
-			text: 'aucune'
-		},
-		{
-			id: '1',
-			text: 'semaine'
-		},
-		{
-			id: '2',
-			text: '2 semaines'
-		},
-		{
-			id: '3',
-			text: '3 semaines'
-		},
-		{
-			id: '4',
-			text: 'x nombre de jours'
-		}
-	];
+	const durationTimeUnits = ['jour', 'semaine'];
+	const periodicityTimeUnits = [ 'aucune','semaine','2 semaines', '3 semaines', 'x nombre de jours'];
 	const prescriberVisibilityOptions = [
-		{
-			id: '0',
-			text: 'Visible pour tous les prescripteurs'
-		},
-		{
-			id: '1',
-			text: 'Visible uniquement pour moi-même'
-		},
-		{
-			id: '2',
-			text: 'Visible uniquement pour le titulaire du DMG'
-		}
+		'Visible pour tous les prescripteurs',
+		'Visible uniquement pour moi-même',
+		'Visible uniquement pour le titulaire du DMG'
 	];
-	const pharmacyVisibilityOptions = [
-		{
-			id: '0',
-			text: 'Le médicament est visible par tous les pharmaciens'
-		},
-		{
-			id: '1',
-			text: 'Le médicament n`est pas visible par tous les pharmaciens'
-		},
-	];
+	const pharmacyVisibilityOptions = ['Le médicament est visible par tous les pharmaciens', 'Le médicament n`est pas visible par tous les pharmaciens'];
 
-	// Get today's date
 	const today = new Date();
-
-	// Calculate the date one year from today
 	const nextYear = new Date(today);
 	nextYear.setFullYear(today.getFullYear() + 1);
-
-	// Format the dates as YYYY-MM-DD
 	const formattedToday = today.toISOString().split('T')[0];
 	const formattedNextYear = nextYear.toISOString().split('T')[0];
 
+	// Compulsory fields
 	let dosage: string | undefined = $state();
 	let duration: number | undefined = $state(1);
-	let durationTimeUnit: {id: string, text: string} = $state(durationTimeUnits[0]);
-	let instructionsForPatient : string | undefined = $state();
-	let refundInstructions: string | undefined = $state();
-
+	let durationTimeUnit:  string = $state(durationTimeUnits[0]);
 	let treatmentStartDate: string | undefined = $state(formattedToday);
 	let executableUntil: string | undefined = $state(formattedNextYear);
-
-	let prescriptionsNumber: number | undefined = $state(0);
-	let periodicityTimeUnit: {id: string, text: string} = $state(periodicityTimeUnits[0]);
+	let prescriptionsNumber: number | undefined = $state(1);
+	let periodicityTimeUnit:  string = $state(periodicityTimeUnits[0]);
 	let periodicityDaysNumber: number | undefined = $state();
-	let prescriberVisibility: {id: string, text: string} = $state(prescriberVisibilityOptions[0]);
-	let pharmacyVisibility: {id: string, text: string} = $state(pharmacyVisibilityOptions[0]);
 
+	let inputsToValidate: string[] = $state([]);
+
+	$effect	(()=>{
+		inputsToValidate= [
+			'dosage',
+			'duration',
+			'durationTimeUnit',
+			'treatmentStartDate',
+			'executableUntil',
+			'prescriptionsNumber',
+			(prescriptionsNumber && prescriptionsNumber > 1) ? 'periodicityTimeUnit' : null,
+			(periodicityTimeUnit && periodicityTimeUnit === 'x nombre de jours') ? 'periodicityDaysNumber' : null
+		].filter((x): x is string => !!x)
+	})
+
+	// Extra fields
 	let showExtraFields = $state(false);
+	let instructionsForPatient : string | undefined = $state();
+	let refundInstructions: string | undefined = $state();
+	let prescriberVisibility:string = $state(prescriberVisibilityOptions[0]);
+	let pharmacyVisibility: string = $state(pharmacyVisibilityOptions[0]);
+
+	const errorMessages = {
+		isRequired: 'Ce champ est obligatoire.'
+	}
+
+	let errors: { [inputName: string]: any } = $state({});
+
+	const isFormValid = (data: { [inputName: string]: any }): boolean => {
+		return !Object.keys(errors).some((inputName) =>
+				Object.keys(errors[inputName]).some(
+						(errorName) => errors[inputName][errorName],
+				),
+		);
+	}
+
+	const validateForm = (data: { [inputName: string]: any }): void => {
+		const setError = (inputName: string, isValid: boolean): void => errors[inputName] = { ...errors[inputName], validationError: !isValid ? errorMessages.isRequired : null };
+		const isRequiredFieldValid = (value: string | number) =>  value != null && value !== '';
+		inputsToValidate.forEach((input) => setError(input, isRequiredFieldValid(data[input])))
+	}
+
+	const handleSubmit = (e: SubmitEvent): void => {
+		e.preventDefault();
+		const form = e.target as HTMLFormElement;
+		const formData = new FormData(form);
+
+		const data: Record<string, FormDataEntryValue> = {};
+		for (const [key, value] of formData.entries()) {
+			data[key] = value;
+		}
+		validateForm(data);
+
+		if (isFormValid(data)) {
+			console.log(data);
+			showModal = false
+			dialog?.close()
+		} else {
+			console.log('Invalid Form');
+		}
+	}
 
 	$effect(() => {
 		if (showModal) dialog?.showModal();
 	});
 </script>
 
-
-
 <dialog
 		bind:this={dialog}
 		onclose={() => (showModal = false)}
 		onclick={(e) => { if (e.target === dialog) dialog.close(); }}
 >
-	<div class='addMedicationModal'>
+	<form id="prescriptionForm" class='addMedicationModal' onsubmit={(e) => handleSubmit(e)}>
 		<div class='addMedicationModal__header'>
 			<h3>Modifier la prescription</h3>
 			<button class='addMedicationModal__header__closeIcn' onclick={() => dialog?.close()}>
@@ -122,21 +122,31 @@
 					<Input label='Nom groupe DCI' defaultValue={medicationTitle} required
 						   disabled
 						   id='drugName' />
-					<Input label='Posologie' required
-								 id='dosage' defaultValue={dosage} />
+					<Input label='Posologie' id='dosage' defaultValue={dosage} required errorMessage={errors.dosage?.validationError  }/>
 					<div class='addMedicationModal__body__content__inputs__group'>
-						<Input label='Durée (nombre d’unités)' bind:defaultValue={duration} required
+						<Input label='Durée (nombre d’unités)' bind:defaultValue={duration} required errorMessage={errors.duration?.validationError  }
 									 id='duration' type='number' min={1} />
 						<Select label='Unité de temps' bind:defaultValue={durationTimeUnit} required
 										id='durationTimeUnit' options={durationTimeUnits} />
 					</div>
 					<div class='addMedicationModal__body__content__inputs__group'>
-						<Input label='Date début du traitement' bind:defaultValue={treatmentStartDate}
+						<Input label='Date début du traitement' bind:defaultValue={treatmentStartDate} required errorMessage={errors.treatmentStartDate?.validationError  }
 							   id='treatmentStartDate' type='date' />
-						<Input label='Exécutable jusqu`au' bind:defaultValue={executableUntil} required
+						<Input label='Exécutable jusqu`au' bind:defaultValue={executableUntil} required errorMessage={errors.executableUntil?.validationError  }
 							   id='executableUntil' type='date' />
 					</div>
-
+					<div class='addMedicationModal__body__content__inputs__group'>
+						<Input label='Nombre de prescriptions' bind:defaultValue={prescriptionsNumber} required errorMessage={errors.prescriptionsNumber?.validationError  }
+							   id='prescriptionsNumber' type='number' min={1} max={12} />
+						{#if prescriptionsNumber && prescriptionsNumber > 1}
+							<Select label='Périodicité' bind:defaultValue={periodicityTimeUnit} required
+									id='periodicityTimeUnit' options={periodicityTimeUnits} />
+						{/if}
+						{#if periodicityTimeUnit === 'x nombre de jours'}
+							<Input label='Nombre de jours' bind:defaultValue={periodicityDaysNumber} required errorMessage={errors.periodicityDaysNumber?.validationError  }
+								   id='periodicityDaysNumber' type='number' min={1} />
+						{/if}
+					</div>
 				</div>
 			</div>
 			<Switch id='showExtraFields' value='Afficher plus'
@@ -149,16 +159,11 @@
 					{#if !!refundInstructions}
 						<p>{refundInstructions}</p>
 					{/if}
-					{#if !!prescriptionsNumber}
-						<p>{prescriptionsNumber}</p>
-						<p>{periodicityTimeUnit.text ?? ''}</p>
-						<p>{periodicityDaysNumber ?? ''}</p>
-					{/if}
 					{#if !!prescriberVisibility}
-						<p>{prescriberVisibility.text}</p>
+						<p>{prescriberVisibility}</p>
 					{/if}
 					{#if !!pharmacyVisibility}
-						<p>{pharmacyVisibility.text}</p>
+						<p>{pharmacyVisibility}</p>
 					{/if}
 					<p></p>
 				</div>
@@ -169,18 +174,6 @@
 							  bind:defaultValue={instructionsForPatient} />
 					<Textarea label='Instructions remboursement' id='refundInstructions'
 							  bind:defaultValue={refundInstructions} />
-					<div class='addMedicationModal__body__content__inputs__group'>
-						<Input label='Nombre de prescriptions' bind:defaultValue={prescriptionsNumber}
-									 id='prescriptionsNumber' type='number' min={1} max={12} />
-						{#if prescriptionsNumber && prescriptionsNumber > 1}
-							<Select label='Périodicité' bind:defaultValue={periodicityTimeUnit}
-											id='periodicity' options={periodicityTimeUnits} />
-						{/if}
-						{#if periodicityTimeUnit.text === 'x nombre de jours'}
-							<Input label='Nombre de jours' bind:defaultValue={periodicityDaysNumber}
-										 id='daysNumber' type='number' min={1} />
-						{/if}
-					</div>
 					<Select label='Visibilité prescripteur' bind:defaultValue={prescriberVisibility}
 									id='prescriberVisibility' options={prescriberVisibilityOptions} />
 					<Select label='Visibilité officine' bind:defaultValue={pharmacyVisibility}
@@ -191,10 +184,10 @@
 			{/if}
 		</div>
 		<div class='addMedicationModal__footer'>
-			<Button title='Cancel' handleClick={() => { dialog?.close() } } type='outlined' />
-			<Button title='Save' handleClick={() => console.log('Save') } type='primary' />
+			<Button title='Cancel' handleClick={() => { dialog?.close() } } view='outlined' type='reset' form="prescriptionForm" />
+			<Button title='Save' view='primary' type='submit' form="prescriptionForm" />
 		</div>
-	</div>
+	</form>
 </dialog>
 
 <style lang='scss'>

@@ -4,8 +4,8 @@
 		id: string,
 		required?: boolean,
 		disabled?: boolean
-		options: { id: string, text: string }[]
-		defaultValue?: { id: string, text: string }
+		options:  string []
+		defaultValue?:  string
 	} = $props();
 </script>
 
@@ -14,7 +14,7 @@
 	<select {id} name={id} bind:value={defaultValue} {disabled}>
 		{#each options as option}
 			<option value={option}>
-				{option.text}
+				{option}
 			</option>
 		{/each}
 	</select>
