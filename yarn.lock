@@ -688,6 +688,11 @@ svelte-check@^4.1.0:
     picocolors "^1.0.0"
     sade "^1.7.4"
 
+svelte-formula@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/svelte-formula/-/svelte-formula-0.5.0.tgz#3d4f625fc69f493e37de7f7da28564a5b9168ad7"
+  integrity sha512-OTQe7XuF7cwBU/Kuwv3yK6jZfCE0f4mdIROknfhqaaC3lTSjZ7JClhb7JD3C+ZtxxiV2rFg85aX6OyK24bsWWw==
+
 svelte@^5.2.7:
   version "5.12.0"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-5.12.0.tgz#1758d66794076ec540da54ab9fe5d643d4b9e17f"

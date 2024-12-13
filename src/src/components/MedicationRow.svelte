@@ -13,7 +13,6 @@
   let distanceToParentTop: number = $state(0);
 
   onMount(() => {
-    // Get the bounding rectangles of the parent and child
     const parentTop = child.parentElement?.getBoundingClientRect();
     const childTop = child.getBoundingClientRect();
     distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
@@ -65,11 +64,6 @@
         </div>
     </div>
     <div class='medicationRow__price'>
-        {#if !!medication.price}
-            <p class='medicationRow__price__info'>
-                R/
-            </p>
-        {/if}
         <p class='medicationRow__price__value'>
             {medication.price}
         </p>
