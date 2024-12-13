@@ -1,0 +1,26 @@
+/* Responsive media queries:
+  ========================================================================== */
+
+$sm: 576px;
+$md: 768px;
+$lg: 992px;
+$xl: 1200px;
+$xxl: 1400px;
+
+@mixin media-breakpoint-up($start) {
+  @media only screen and (min-width: $start) {
+    @content;
+  }
+}
+
+@mixin media-breakpoint-down($end) {
+  @media only screen and (max-width: $end) {
+    @content;
+  }
+}
+
+@mixin media-breakpoint-between($start, $end) {
+  @media (min-width: $start) and (max-width: $end) {
+    @content;
+  }
+}

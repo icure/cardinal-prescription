@@ -1,17 +1,18 @@
 <script lang='ts'>
 	import type { Snippet } from 'svelte';
 
-	let { content, iconSnippet }: { content: string, iconSnippet: Snippet } = $props();
+	let { content, iconSnippet, orientation='tr' }: { content: string, iconSnippet: Snippet, orientation?: 'tr'|'br'|'tl'|'bl' } = $props();
 	let active = $state(false);
+
 </script>
 
-<div class:active class={'tooltip'} onmouseenter={() => active = true} onmouseleave={() => active = false}
+<div class:active class={`tooltip ${orientation}`} onmouseenter={() => active = true} onmouseleave={() => active = false}
 		 role='tooltip'>
-	<div class='tooltip__icon'>
+	<div class='icon'>
 		{@render iconSnippet()}
 	</div>
-	<div class='tooltip__content'>
-		<div class='tooltip__content__text'>
+	<div class='content'>
+		<div class='content__text'>
 			<p>{content}</p>
 		</div>
 	</div>
@@ -26,14 +27,19 @@
     position: relative;
     width: min-content;
 
-    &:hover {
+	  @mixin tooltipArrow {
+		  content: '';
+		  width: 0;
+		  height: 0;
+		  border-left: 7px solid transparent;
+		  border-right: 7px solid transparent;
+	  }
+
+    &.tr:hover,
+	&.tl:hover {
       &::before {
-        content: '';
-        width: 0;
-        height: 0;
-        border-left: 7px solid transparent;
-        border-right: 7px solid transparent;
-        border-top: 7px solid app.$burgundy-900;
+        @include tooltipArrow;
+	  border-top: 7px solid app.$burgundy-900;
 
         position: absolute;
         bottom: 25px;
@@ -42,19 +48,32 @@
       }
     }
 
+	  &.br:hover,
+	  &.bl:hover{
+		  &::before {
+			  @include tooltipArrow;
+			  border-bottom: 7px solid app.$burgundy-900;
 
-    &__icon {
+			  position: absolute;
+			  bottom: -10px;
+			  left: 50%;
+			  transform: translate(-50%, 0);
+		  }
+	  }
+
+
+    .icon {
       height: 22px;
       display: flex;
       align-items: center;
+		z-index: 10;
     }
 
-    &__content {
+    .content {
       display: none;
       position: absolute;
-      bottom: 30px;
-      left: -12px;
       flex-direction: column;
+		z-index: 15;
 
       &__text {
         background-color: app.$burgundy-900;
@@ -78,8 +97,29 @@
       }
     }
 
+	  &.tr .content{
+		  bottom: 30px;
+		  left: -12px;
+	  }
+
+	  &.tl .content{
+		  bottom: 30px;
+		  right: -12px;
+	  }
+
+	  &.br .content{
+		  top: 32px;
+		  left: -12px;
+
+	  }
+	  &.bl .content{
+		  top: 32px;
+		  right: -12px;
+
+	  }
+
     &.active {
-      .tooltip__content {
+      .content {
         display: flex;
       }
     }

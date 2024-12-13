@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.1.0",
-    "@icure/cardinal-be-sam": "./tsPackage"
+    "@icure/cardinal-be-sam": "./tsPackage",
+    "yup": "^1.5.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",

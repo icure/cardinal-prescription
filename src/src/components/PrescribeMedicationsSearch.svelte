@@ -1,69 +1,67 @@
 <script lang='ts'>
-    import {SearchIcn} from '../icons/index.svelte';
-    import type {MedicationType} from '../types/index.svelte';
-    import MedicationRow from './MedicationRow.svelte';
-    import AddMedicationModal from './AddMedicationModal.svelte';
-    import {initialiseSdk, searchMedications} from "../../lib/cardinal";
-    import {onMount} from "svelte";
-    import {Amp, AmpStatus, type PaginatedListIterator} from "@icure/cardinal-be-sam";
-    import InfiniteScroll from "./InfiniteScroll.svelte";
+  import {SearchIcn} from '../icons/index.svelte';
+  import type {MedicationType} from '../types/index.svelte';
+  import MedicationRow from './MedicationRow.svelte';
+  import {initialiseSdk, searchMedications} from "../../lib/cardinal";
+  import {onMount} from "svelte";
+  import {Amp, AmpStatus, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+  import InfiniteScroll from "./InfiniteScroll.svelte";
 
-    let sdk: any;
+  let sdk: any;
 
-    onMount(async () => {
-        sdk = await initialiseSdk()
-    });
+  onMount(async () => {
+    sdk = await initialiseSdk()
+  });
 
-    let searchQuery: string | undefined = $state();
-    let dropdownDisplayed: boolean = $derived(!!searchQuery);
-    let showModal = $state(false);
-    let displayedMedications: PaginatedListIterator<Amp> | undefined
-    let pages: MedicationType[][] = $state([]);
-    let newPages: MedicationType[][] = $state([]);
-    let selectedMedication: MedicationType | undefined = $state()
+  let searchQuery: string | undefined = $state();
+  let dropdownDisplayed: boolean = $derived(!!searchQuery);
+  let displayedMedications: PaginatedListIterator<Amp> | undefined
+  let pages: MedicationType[][] = $state([]);
+  let newPages: MedicationType[][] = $state([]);
+  let {handleModifyPrescription}: { handleModifyPrescription: (medication: MedicationType) => void } = $props()
 
-    async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
-        const now = Date.now()
-        const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
-        const page = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
-            return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
-        }).map((ampp) => ({
-            ampId: amp.id,
-            id: ampp.ctiExtended,
-            title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
-            activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-            price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
-        })))
+  async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+    const now = Date.now()
+    const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
+    const page = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+      return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
+    }).map((ampp) => ({
+      ampId: amp.id,
+      id: ampp.ctiExtended,
+      title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
+      activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+      price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : ''
+    })))
 
-        return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
-    }
+    return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
+  }
 
-    $effect(() => {
-        let q = searchQuery;
-        if (q && q.length >= 3) {
-            const cachedQuery = q
-            pages = []
-            setTimeout(() => {
-                if (cachedQuery === searchQuery) {
-                    searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
-                        displayedMedications = medications;
-                        if (medications) {
-                            const firstPage = await loadPage(medications, 10);
-                            pages = [firstPage]
-                        }
-                    });
-                }
-            }, 100)
-
+  $effect(() => {
+    let q = searchQuery;
+    if (q && q.length >= 3) {
+      const cachedQuery = q
+      pages = []
+      setTimeout(() => {
+        if (cachedQuery === searchQuery) {
+          searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
+            displayedMedications = medications;
+            if (medications) {
+              const firstPage = await loadPage(medications, 10);
+              pages = [firstPage]
+            }
+          });
         }
-    });
+      }, 100)
 
-    const loadMore = async () => {
-        if (displayedMedications) {
-            newPages = [await loadPage(displayedMedications, 10)]
-            pages = [...pages, ...newPages]
-        }
     }
+  });
+
+  const loadMore = async () => {
+    if (displayedMedications) {
+      newPages = [await loadPage(displayedMedications, 10)]
+      pages = [...pages, ...newPages]
+    }
+  }
 
 
 </script>
@@ -81,12 +79,7 @@
         <div class='prescribeMedications__dropdown'>
             {#each pages as medicationPage}
                 {#each medicationPage as medication}
-                    <MedicationRow
-                            {medication}
-                            onModifyPrescription={(medication: MedicationType) => {
-                                showModal = true
-                                selectedMedication = medication;
-                            }}/>
+                    <MedicationRow {medication} {handleModifyPrescription}/>
                 {/each}
             {/each}
             <InfiniteScroll
@@ -96,19 +89,17 @@
     {/if}
 </div>
 
-{#if !!selectedMedication}
-    <AddMedicationModal bind:showModal {selectedMedication}/>
-{/if}
-
-
 <style lang='scss'>
   @use '../../style/app';
 
   .prescribeMedications {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    max-width: 700px;
+    width: 700px;
+
+    @include app.media-breakpoint-down(app.$md) {
+      width: 100%;
+    }
 
     &__search {
       display: flex;
