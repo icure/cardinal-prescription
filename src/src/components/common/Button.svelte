@@ -1,8 +1,8 @@
 <script lang='ts'>
-	let { title, handleClick, type }: { title: string, handleClick: () => void, type: 'primary' | 'outlined' } = $props();
+	let { title, handleClick, view, type='button', form }: { title: string, handleClick?: () => void, view: 'primary' | 'outlined', type?: 'button' | 'reset' | 'submit', form?:string } = $props();
 </script>
 
-<button class={type} onclick={() => handleClick()}>
+<button class={view} onclick={() => !!handleClick && handleClick()} {type} {form}>
 	{title}
 </button>
 

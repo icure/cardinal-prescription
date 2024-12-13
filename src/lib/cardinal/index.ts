@@ -1,5 +1,5 @@
 // @ts-ignore
-import {CardinalBeSamSdk, Credentials, type SamV2Api} from "@icure/cardinal-be-sam";
+import {CardinalBeSamSdk, Credentials, type SamV2Api } from "@icure/cardinal-be-sam";
 
 export const initialiseSdk = async () => {
     try {

@@ -1,55 +1,73 @@
 <script lang='ts'>
-	import type { MedicationType } from '../types/index.svelte';
-	import Tooltip from './common/Tooltip.svelte';
-	import { GlobeIcn, PillIcn, PlusIcn } from '../icons/index.svelte';
+  import type {MedicationType} from '../types/index.svelte';
+  import Tooltip from './common/Tooltip.svelte';
+  import {GlobeIcn, PillIcn, PlusIcn} from '../icons/index.svelte';
+  import {onMount} from "svelte";
 
-	let { medication, onModifyPrescription }: { medication: MedicationType, onModifyPrescription: (medication: MedicationType) => void } = $props();
+  let {medication, handleModifyPrescription}: {
+    medication: MedicationType,
+    handleModifyPrescription: (medication: MedicationType) => void
+  } = $props();
 
+  let child: HTMLElement;
+  let distanceToParentTop: number = $state(0);
+
+  onMount(() => {
+    const parentTop = child.parentElement?.getBoundingClientRect();
+    const childTop = child.getBoundingClientRect();
+    distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
+  });
 </script>
 
 
 {#snippet globeIcon()}
-	<div class='tooltipBtn'>
-		<GlobeIcn />
-	</div>
+    <div class='tooltipBtn'>
+        <GlobeIcn/>
+    </div>
 {/snippet}
 {#snippet pillIcon()}
-	<div class='tooltipBtn'>
-		<PillIcn />
-	</div>
+    <div class='tooltipBtn'>
+        <PillIcn/>
+    </div>
 {/snippet}
 {#snippet plusIcon()}
-	<div class='addPrescription'>
-		<PlusIcn />
-	</div>
+    <div class='addPrescription'>
+        <PlusIcn/>
+    </div>
 {/snippet}
 
-<div class='medicationRow'>
-	<div class='medicationRow__leftBlock'>
-		<div class='medicationRow__btnsRow' role='button' onclick={() => onModifyPrescription(medication)}>
-			<Tooltip content='Modify the prescription' iconSnippet={plusIcon} />
-		</div>
-		<div class='medicationRow__content'>
-			<div class='medicationRow__content__title'>
-				<p>{medication.title}</p>
-				<div class='tooltips'>
-					<Tooltip content='CBiP: Centre belge d’information pharmacotherapeutique' iconSnippet={globeIcon} />
-					<Tooltip content='Download a notice about the drug' iconSnippet={pillIcon} />
-				</div>
-			</div>
-			<div class='medicationRow__content__subtitle'>
-				<p>{medication.activeIngredient}</p>
-			</div>
-		</div>
-	</div>
-	<div class='medicationRow__price'>
-		<p class='medicationRow__price__info'>
-			R/
-		</p>
-		<p class='medicationRow__price__value'>
-			{medication.price}
-		</p>
-	</div>
+<div class='medicationRow' bind:this={child}>
+    <div class='medicationRow__leftBlock'>
+        <button class='medicationRow__btnsRow' onclick={() => handleModifyPrescription(medication)}>
+            <Tooltip content='Modify the prescription' iconSnippet={plusIcon}
+                     orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+        </button>
+        <div class='medicationRow__content'>
+            <div class='medicationRow__content__title'>
+                <p>{medication.title}</p>
+                <div class='tooltips tooltips--desktop'>
+                    <Tooltip content='CBiP: Centre belge d’information pharmacotherapeutique' iconSnippet={globeIcon}
+                             orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                    <Tooltip content='Download a notice about the drug' iconSnippet={pillIcon}
+                             orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                </div>
+            </div>
+            <div class='medicationRow__content__subtitle'>
+                <p>{medication.activeIngredient}</p>
+            </div>
+            <div class='tooltips tooltips--mobile'>
+                <Tooltip content='CBiP: Centre belge d’information pharmacotherapeutique' iconSnippet={globeIcon}
+                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                <Tooltip content='Download a notice about the drug' iconSnippet={pillIcon}
+                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+            </div>
+        </div>
+    </div>
+    <div class='medicationRow__price'>
+        <p class='medicationRow__price__value'>
+            {medication.price}
+        </p>
+    </div>
 </div>
 
 <style lang='scss'>
@@ -119,7 +137,6 @@
       &__title {
         display: flex;
         align-items: flex-start;
-        //justify-content: flex-start;
         gap: 8px;
 
         p {
@@ -128,11 +145,10 @@
           font-style: normal;
           font-weight: 600;
           line-height: normal;
-        }
 
-        .tooltips {
-          display: flex;
-          align-items: flex-start;
+          @include app.media-breakpoint-down(app.$sm) {
+            font-size: 14px;
+          }
         }
       }
 
@@ -143,6 +159,30 @@
           font-style: normal;
           font-weight: 300;
           line-height: normal;
+
+          @include app.media-breakpoint-down(app.$sm) {
+            font-size: 12px;
+          }
+        }
+      }
+
+      .tooltips {
+        align-items: flex-start;
+        display: none;
+
+        &--desktop {
+          @include app.media-breakpoint-up(app.$sm) {
+            display: flex;
+          }
+        }
+
+        &--mobile {
+          margin-top: 8px;
+          gap: 4px;
+
+          @include app.media-breakpoint-down(app.$sm) {
+            display: flex;
+          }
         }
       }
     }
@@ -152,6 +192,12 @@
       align-items: center;
       gap: 18px;
 
+      @include app.media-breakpoint-down(app.$sm) {
+        gap: 8px;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
       &__info {
         display: flex;
         padding: 1px 5px;
@@ -159,11 +205,11 @@
         justify-content: center;
         align-items: center;
 
-        border-radius: 3px;
-        background: app.$gray-600;
+        border-radius: 2px;
+        background: rgba(app.$gray-600, 0.6);
 
         color: #FFF;
-        font-size: 12px;
+        font-size: 10px;
         font-style: normal;
         font-weight: 400;
         line-height: normal;
@@ -175,6 +221,10 @@
         font-style: normal;
         font-weight: 600;
         line-height: normal;
+
+        @include app.media-breakpoint-down(app.$sm) {
+          font-size: 14px;
+        }
       }
     }
   }
