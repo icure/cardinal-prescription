@@ -1,8 +1,8 @@
 <script lang='ts'>
   import type {MedicationType} from '../types/index.svelte';
-  import Tooltip from './common/Tooltip.svelte';
-  import {GlobeIcn, PillIcn, PlusIcn} from '../icons/index.svelte';
+  import {BlackTriangleIcn, ChevronIcn, PillsBottleIcn, PlusIcn, PrescriptionIcn} from '../icons/index.svelte';
   import {onMount} from "svelte";
+  import Tooltip from "./common/Tooltip.svelte";
 
   let {medication, handleModifyPrescription}: {
     medication: MedicationType,
@@ -11,219 +11,242 @@
 
   let child: HTMLElement;
   let distanceToParentTop: number = $state(0);
+  let isExpanded: boolean = $state(false)
 
   onMount(() => {
     const parentTop = child.parentElement?.getBoundingClientRect();
     const childTop = child.getBoundingClientRect();
     distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
   });
+
+  const getSpecialRegulation = (code: number) => {
+    switch (code) {
+      case 1:
+        return 'No narcotic, specially regulated drug'
+      case 2:
+        return 'Narcotic, specially regulated drug'
+      default:
+        return 'No special regulation'
+    }
+  }
 </script>
 
 
-{#snippet globeIcon()}
-    <div class='tooltipBtn'>
-        <GlobeIcn/>
-    </div>
+{#snippet blackTriangleIcn()}
+    <BlackTriangleIcn/>
 {/snippet}
-{#snippet pillIcon()}
-    <div class='tooltipBtn'>
-        <PillIcn/>
-    </div>
+{#snippet specialRegulationsIcn()}
+    <PillsBottleIcn/>
 {/snippet}
-{#snippet plusIcon()}
-    <div class='addPrescription'>
-        <PlusIcn/>
-    </div>
+{#snippet prescriptionRequiredIcn()}
+    <PrescriptionIcn/>
+{/snippet}
+{#snippet plusIcn()}
+    <PlusIcn/>
 {/snippet}
 
-<div class='medicationRow' bind:this={child}>
-    <div class='medicationRow__leftBlock'>
-        <button class='medicationRow__btnsRow' onclick={() => handleModifyPrescription(medication)}>
-            <Tooltip content='Modify the prescription' iconSnippet={plusIcon}
-                     orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
-        </button>
-        <div class='medicationRow__content'>
-            <div class='medicationRow__content__title'>
-                <p>{medication.title}</p>
-                <div class='tooltips tooltips--desktop'>
-                    <Tooltip content='CBiP: Centre belge d’information pharmacotherapeutique' iconSnippet={globeIcon}
-                             orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
-                    <Tooltip content='Download a notice about the drug' iconSnippet={pillIcon}
-                             orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+<div class='medicationRow' class:isExpanded bind:this={child}>
+    <div class='header'>
+        <div class='header__medication'>
+            <button class='header__medication__appPrescription' onclick={() => handleModifyPrescription(medication)}>
+                <Tooltip content='Modify the prescription' iconSnippet={plusIcn}
+                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+            </button>
+            <div class='header__medication__content'>
+                <div class='header__medication__content__title'>
+                    <h3>{medication.title}</h3>
+                    <div class='header__medication__content__title__infographics'>
+                        {#if medication.blackTriangle}
+                            <div class='header__medication__content__title__infographics__item'>
+                                <Tooltip content='Black triangle'
+                                         iconSnippet={blackTriangleIcn}
+                                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                            </div>
+                        {/if}
+                        {#if !!medication.speciallyRegulated}
+                            <div class='header__medication__content__title__infographics__item'>
+                                <Tooltip content={getSpecialRegulation(medication.speciallyRegulated)}
+                                         iconSnippet={specialRegulationsIcn}
+                                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                            </div>
+                        {/if}
+                        {#if medication.genericPrescriptionRequired}
+                            <div class='header__medication__content__title__infographics__item'>
+                                <Tooltip content='Generic prescription required' iconSnippet={prescriptionRequiredIcn}
+                                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                            </div>
+                        {/if}
+                    </div>
                 </div>
-            </div>
-            <div class='medicationRow__content__subtitle'>
-                <p>{medication.activeIngredient}</p>
-            </div>
-            <div class='tooltips tooltips--mobile'>
-                <Tooltip content='CBiP: Centre belge d’information pharmacotherapeutique' iconSnippet={globeIcon}
-                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
-                <Tooltip content='Download a notice about the drug' iconSnippet={pillIcon}
-                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+                <p class='header__medication__content__activeIngredient'>{medication.activeIngredient}</p>
+                <p class='header__medication__content__price'>{medication.price}</p>
             </div>
         </div>
+        <button class='header__arrow' class:isExpanded onclick={() => isExpanded = !isExpanded}>
+            <ChevronIcn/>
+        </button>
     </div>
-    <div class='medicationRow__price'>
-        <p class='medicationRow__price__value'>
-            {medication.price}
-        </p>
-    </div>
+    {#if isExpanded}
+        <div class='content'>
+            {#if !!medication.crmLink}
+                <a href={medication.crmLink} target="_blank">CRM Link</a>
+            {/if}
+            {#if !!medication.patientInformationLeafletLink}
+                <a href={medication.patientInformationLeafletLink} target="_blank">Patient information leaflet</a>
+            {/if}
+        </div>
+    {/if}
 </div>
 
 <style lang='scss'>
   @use '../../style/app';
 
   .tooltipBtn {
-    width: 22px;
-    height: 22px;
-    border: 1px solid transparent;
-    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-
-    &:hover {
-      border-color: app.$orange;
-    }
   }
 
   .medicationRow {
     width: 100%;
     display: flex;
-    padding: 12px 18px;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid app.$gray-400;
-    background-color: white;
-    cursor: pointer;
+    flex-direction: column;
+    border-radius: 6px;
+    background: #FFF;
+    border: 1px solid app.$blue-200;
 
-    &:hover {
-      background-color: app.$gray-200;
+    &:hover, &.isExpanded {
+      border-radius: 6px;
+      border: 1px solid app.$blue-800;
+      background: #FFF;
+      box-shadow: 0 0 0 2px rgba(app.$blue-900, 0.3);
     }
 
-    &__leftBlock {
+    &.isExpanded {
+
+      .header {
+        border-radius: 6px 6px 0 0;
+      }
+    }
+
+    .header {
       display: flex;
+      padding: 8px 12px;
+      justify-content: space-between;
       align-items: center;
-      gap: 18px;
-    }
+      align-self: stretch;
+      background: #FFF;
+      border-radius: 6px;
 
-    &__btnsRow {
-      display: flex;
-
-      .addPrescription {
-        width: 24px;
-        height: 24px;
+      &__medication {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 12px;
+
+        &__appPrescription {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          border: 1px solid rgba(app.$burgundy-900, 0.35);
+          background-color: #FFFFFF;
+
+          &:hover {
+            border: 1px solid rgba(app.$burgundy-900, 1);
+          }
+        }
+
+        &__content {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-start;
+
+          &__title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            h3 {
+              color: app.$gray-900;
+              font-size: 16px;
+              font-style: normal;
+              font-weight: 500;
+              line-height: 22px; /* 157.143% */
+            }
+
+            &__infographics {
+              display: flex;
+              align-items: center;
+              gap: 2px;
+
+              &__item {
+                display: flex;
+                width: 22px;
+                height: 22px;
+                justify-content: center;
+                align-items: center;
+
+                border-radius: 16px;
+                border: 1px solid app.$orange-900;
+                background: rgba(app.$orange-500, 0.26);
+              }
+            }
+          }
+
+          &__activeIngredient {
+            color: app.$gray-900;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 300;
+            line-height: normal;
+          }
+
+          &__price {
+            color: app.$orange-900;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: normal;
+            margin-top: 4px;
+          }
+        }
+      }
+
+      &__arrow {
+        background: none;
         cursor: pointer;
 
-        border-radius: 3px;
-        background: app.$burgundy-900;
-
-        &:hover {
-          background: app.$burgundy-800;
+        &.isExpanded {
+          transform: rotate(90deg);
         }
       }
+
+
     }
 
-    &__content {
+    .content {
       display: flex;
-      flex-direction: column;
+      padding: 12px;
       align-items: flex-start;
-      gap: 2px;
+      gap: 24px;
+      align-self: stretch;
+      background-color: app.$blue-300;
+      border-radius: 0 0 6px 6px;
 
-      &__title {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
+      border-top: 1px solid app.$blue-500;
 
-        p {
-          color: app.$gray-900;
-          font-size: 16px;
-          font-style: normal;
-          font-weight: 600;
-          line-height: normal;
-
-          @include app.media-breakpoint-down(app.$sm) {
-            font-size: 14px;
-          }
-        }
-      }
-
-      &__subtitle {
-        p {
-          color: app.$gray-900;
-          font-size: 14px;
-          font-style: normal;
-          font-weight: 300;
-          line-height: normal;
-
-          @include app.media-breakpoint-down(app.$sm) {
-            font-size: 12px;
-          }
-        }
-      }
-
-      .tooltips {
-        align-items: flex-start;
-        display: none;
-
-        &--desktop {
-          @include app.media-breakpoint-up(app.$sm) {
-            display: flex;
-          }
-        }
-
-        &--mobile {
-          margin-top: 8px;
-          gap: 4px;
-
-          @include app.media-breakpoint-down(app.$sm) {
-            display: flex;
-          }
-        }
-      }
-    }
-
-    &__price {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-
-      @include app.media-breakpoint-down(app.$sm) {
-        gap: 8px;
-        flex-direction: column;
-        align-items: flex-end;
-      }
-
-      &__info {
-        display: flex;
-        padding: 1px 5px;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-
-        border-radius: 2px;
-        background: rgba(app.$gray-600, 0.6);
-
-        color: #FFF;
-        font-size: 10px;
+      a {
+        color: app.$blue-900;
+        font-size: 14px;
         font-style: normal;
         font-weight: 400;
         line-height: normal;
-      }
 
-      &__value {
-        color: app.$orange;
-        font-size: 16px;
-        font-style: normal;
-        font-weight: 600;
-        line-height: normal;
-
-        @include app.media-breakpoint-down(app.$sm) {
-          font-size: 14px;
+        &:hover {
+          text-decoration: underline;
         }
       }
     }
