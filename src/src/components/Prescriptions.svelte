@@ -66,6 +66,10 @@
     border-radius: 6px;
     border: 1px solid app.$gray-300;
 
+    @include app.media-breakpoint-down(app.$md) {
+      width: 100%;
+    }
+
     &__rows {
       width: 100%;
       height: auto;
@@ -79,7 +83,6 @@
       padding: 6px;
       padding-right: 8px;
       gap: 5px;
-      background: app.$blue-400;
     }
 
     &__footer {

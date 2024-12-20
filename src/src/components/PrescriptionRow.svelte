@@ -1,6 +1,6 @@
 <script lang='ts'>
   import type {PrescriptionType} from '../types/index.svelte';
-  import {BlackTriangleIcn, PillsBottleIcn, PrescriptionIcn} from '../icons/index.svelte';
+  import {BlackTriangleIcn, DeleteIcn, EditIcn, PillsBottleIcn, PrescriptionIcn} from '../icons/index.svelte';
   import {onMount} from "svelte";
   import Tooltip from "./common/Tooltip.svelte";
 
@@ -27,6 +27,16 @@
         return 'No special regulation'
     }
   }
+
+  const colors = {
+    red: 'red',
+    blue: '#3D87C5',
+    gray: '#383A3C'
+  }
+
+  let editIcnColor = $state(colors.gray)
+  let deleteIcnColor = $state(colors.gray)
+
 </script>
 
 {#snippet blackTriangleIcn()}
@@ -50,20 +60,20 @@
                             <div class='header__prescription__content__title__infographics__item'>
                                 <Tooltip content='Black triangle'
                                          iconSnippet={blackTriangleIcn}
-                                         orientation={distanceToParentTop > 55 ? 'tr' : 'br'}/>
+                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
                             </div>
                         {/if}
                         {#if !!prescription.speciallyRegulated}
                             <div class='header__prescription__content__title__infographics__item'>
                                 <Tooltip content={getSpecialRegulation(prescription.speciallyRegulated)}
                                          iconSnippet={specialRegulationsIcn}
-                                         orientation={distanceToParentTop > 55 ? 'tr' : 'br'}/>
+                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
                             </div>
                         {/if}
                         {#if prescription.genericPrescriptionRequired}
                             <div class='header__prescription__content__title__infographics__item'>
                                 <Tooltip content='Generic prescription required' iconSnippet={prescriptionRequiredIcn}
-                                         orientation={distanceToParentTop > 55 ? 'tr' : 'br'}/>
+                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
                             </div>
                         {/if}
                     </div>
@@ -71,6 +81,18 @@
                 <p>{prescription.dosage}</p>
             </div>
         </div>
+    </div>
+    <div class="actions">
+        <button class="actions__btn" onclick={()=> console.log('edit')}
+                onmouseenter={() => editIcnColor = colors.blue}
+                onmouseleave={() => editIcnColor = colors.gray}>
+            <EditIcn pathFill={editIcnColor}/>
+        </button>
+        <button class="actions__btn" onclick={()=> console.log('delete')}
+                onmouseenter={() => deleteIcnColor = colors.red}
+                onmouseleave={() => deleteIcnColor = colors.gray}>
+            <DeleteIcn pathFill={deleteIcnColor}/>
+        </button>
     </div>
 </div>
 
@@ -86,7 +108,11 @@
   .prescriptionRow {
     width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 12px;
     border-radius: 6px;
     background: #FFF;
     border: 1px solid app.$blue-200;
@@ -98,14 +124,24 @@
       box-shadow: 0 0 0 2px rgba(app.$blue-900, 0.3);
     }
 
+    @include app.media-breakpoint-down(app.$sm) {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
     .header {
+      width: 83%;
       display: flex;
-      padding: 8px 12px;
       justify-content: space-between;
       align-items: center;
       align-self: stretch;
       background: #FFF;
-      border-radius: 6px;
+
+      @include app.media-breakpoint-down(app.$sm) {
+        width: 100%;
+      }
 
       &__prescription {
         display: flex;
@@ -120,7 +156,7 @@
 
           &__title {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
 
             h3 {
@@ -128,7 +164,6 @@
               font-size: 16px;
               font-style: normal;
               font-weight: 500;
-              line-height: 22px;
             }
 
             &__infographics {
@@ -160,6 +195,34 @@
 
         }
       }
+    }
+
+    .actions {
+      width: 36px;
+      display: flex;
+      gap: 8px;
+
+      @include app.media-breakpoint-down(app.$sm) {
+        width: 100%;
+        gap: 4px;
+      }
+
+      &__btn {
+        background: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        @include app.media-breakpoint-down(app.$sm) {
+          width: 32px;
+          height: 32px;
+          border: 1px solid app.$blue-400;
+          background: rgba(app.$blue-400, 0.3);
+          border-radius: 6px;
+        }
+      }
+
     }
   }
 
