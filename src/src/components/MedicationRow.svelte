@@ -123,25 +123,35 @@
     }
 
     &.isExpanded {
-
       .header {
         border-radius: 6px 6px 0 0;
       }
     }
 
     .header {
+      width: 100%;
       display: flex;
       padding: 8px 12px;
       justify-content: space-between;
+      gap: 12px;
       align-items: center;
       align-self: stretch;
       background: #FFF;
       border-radius: 6px;
 
+      @include app.media-breakpoint-down(app.$sm) {
+        gap: 4px;
+      }
+
       &__medication {
+        width: 89%;
         display: flex;
         align-items: center;
         gap: 12px;
+
+        @include app.media-breakpoint-down(app.$sm) {
+          gap: 8px;
+        }
 
         &__appPrescription {
           width: 24px;
@@ -159,6 +169,7 @@
         }
 
         &__content {
+          width: 90%;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -174,7 +185,6 @@
               font-size: 16px;
               font-style: normal;
               font-weight: 500;
-              line-height: 22px; /* 157.143% */
             }
 
             &__infographics {
@@ -216,6 +226,7 @@
       }
 
       &__arrow {
+        width: 18px;
         background: none;
         cursor: pointer;
 
@@ -223,8 +234,6 @@
           transform: rotate(90deg);
         }
       }
-
-
     }
 
     .content {

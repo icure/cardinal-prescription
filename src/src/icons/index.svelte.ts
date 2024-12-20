@@ -8,6 +8,7 @@ import BlackTriangleIcn from './BlackTriangleIcn.svelte'
 import PillsBottleIcn from './PillsBottleIcn.svelte'
 import PrescriptionIcn from './PrescriptionIcn.svelte'
 import ChevronIcn from './ChevronIcn.svelte'
+import EditIcn from "./EditIcn.svelte";
 
 export {
   GlobeIcn,
@@ -19,5 +20,6 @@ export {
   BlackTriangleIcn,
   PillsBottleIcn,
   PrescriptionIcn,
-  ChevronIcn
+  ChevronIcn,
+  EditIcn
 };
