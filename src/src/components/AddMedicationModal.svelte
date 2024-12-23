@@ -6,7 +6,6 @@
   import Select from './common/Select.svelte';
   import Textarea from './common/Textarea.svelte';
   import type {MedicationType} from "../types/index.svelte";
-  import {Amp} from "@icure/cardinal-be-sam";
 
   let {selectedMedication, handleClose}: { selectedMedication: MedicationType, handleClose: () => void } = $props();
 
@@ -104,9 +103,6 @@
     validateForm(data);
 
     if (isFormValid(data)) {
-      console.log(data);
-      const prescription = new Amp(data)
-      console.log(prescription);
       handleClose()
     } else {
       console.log('Invalid Form');

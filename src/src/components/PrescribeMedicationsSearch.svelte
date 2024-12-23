@@ -26,13 +26,6 @@
     const page = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
       return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
     }).map((ampp) => {
-      // console.log('amp')
-      // console.log(amp)
-      if (ampp.posologyNote) {
-        console.log('ampp')
-        console.log(ampp.posologyNote)
-      }
-
       return {
         ampId: amp.id,
         id: ampp.ctiExtended,
