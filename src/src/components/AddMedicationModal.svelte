@@ -8,7 +8,7 @@
   import type {MedicationType} from "../types/index.svelte";
   import {Medication} from '@icure/be-fhc-api'
   import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
-  import {Code} from "@icure/be-fhc-api/model/Code";
+  import {Code} from "../utils/code-utils";
 
   let {selectedMedication, handleClose}: { selectedMedication: MedicationType, handleClose: () => void } = $props();
 
@@ -105,14 +105,64 @@
     }
     validateForm(data);
 
-    if (isFormValid(data)) {
+    if (isFormValid(data) && selectedMedication.cnk) {
       console.log('data')
       console.log(data)
+
+        /*
+        {
+  "expirationDate": 20250113,
+  "feedback": true,
+  "medications": [
+    {
+      "medicinalProduct": {
+        "intendedname": "Dafalgan 500 mg comp. 20",
+        "intendedcds": [
+          {
+            "type": "CD-DRUG-CNK",
+            "code": "2933893"
+          }
+        ],
+        "samId": "VerV3Rbb9zSDZMwDnbO8+CRtsV94A3EyT/GNXfVQYMY="
+      },
+      "beginMoment": 20241014,
+      "endMoment": 20241020,
+      "instructionForPatient": "1 dose le matin, 1 à midi, 1 le soir",
+      "instructionsForReimbursement": null,
+      "substitutionAllowed": true
+    }
+  ],
+  "patient": {
+    "firstName": "John",
+    "lastName": "Dupont",
+    "gender": "male",
+    "ssin": "77090948948",
+    "dateOfBirth": 19770909
+  },
+  "samVersion": "E.20241013_020020",
+  "packageName": "phyMedispring[Medispring/1.0]-freehealth-connector",
+  "packageVersion": "1.0]-freehealth-connector",
+  "vendorEmail": "support@medispring.be",
+  "vendorName": "phyMedispring[Medispring",
+  "vendorPhone": "+3278077050",
+  "vision": "",
+  "visionOthers": "open",
+  "hcp": {
+    "firstName": "Maxime",
+    "lastName": "Mennechet",
+    "nihii": "18785633004",
+    "ssin": "92092412781"
+  },
+  "executorId": "5cb3b240-d38b-45f4-b3b2-40d38b45f4f7",
+  "lang": "fr"
+}
+
+         */
 
       const medicationToSend = new Medication({
         medicinalProduct: new Medicinalproduct({
           samId: selectedMedication.ampId,
-          intendedcds: [new Code(selectedMedication.id), new Code(selectedMedication.ampId)],
+          intendedcds: [Code.from("CD-DRUG-CNK", selectedMedication.cnk)],
           intendedname: selectedMedication.intendedName
         }),
         beginMoment: data.treatmentStartDate,
