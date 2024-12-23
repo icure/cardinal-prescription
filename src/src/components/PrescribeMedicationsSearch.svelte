@@ -1,75 +1,81 @@
 <script lang='ts'>
-  import {SearchIcn} from '../icons/index.svelte';
-  import type {MedicationType} from '../types/index.svelte';
-  import MedicationRow from './MedicationRow.svelte';
-  import {initialiseSdk, searchMedications} from "../../lib/cardinal";
-  import {onMount} from "svelte";
-  import {Amp, AmpStatus, type PaginatedListIterator} from "@icure/cardinal-be-sam";
-  import InfiniteScroll from "./InfiniteScroll.svelte";
+    import {SearchIcn} from '../icons/index.svelte';
+    import type {MedicationType} from '../types/index.svelte';
+    import MedicationRow from './MedicationRow.svelte';
+    import {initialiseSdk, searchMedications} from "../../lib/cardinal";
+    import {onMount} from "svelte";
+    import {Amp, AmpStatus, DmppCodeType, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+    import InfiniteScroll from "./InfiniteScroll.svelte";
 
-  let sdk: any;
+    let sdk: any;
 
-  onMount(async () => {
-    sdk = await initialiseSdk()
-  });
+    onMount(async () => {
+        sdk = await initialiseSdk()
+    });
 
-  let searchQuery: string | undefined = $state();
-  let dropdownDisplayed: boolean = $derived(!!searchQuery);
-  let displayedMedications: PaginatedListIterator<Amp> | undefined
-  let pages: MedicationType[][] = $state([]);
-  let newPages: MedicationType[][] = $state([]);
-  let {handleModifyPrescription}: { handleModifyPrescription: (medication: MedicationType) => void } = $props()
+    let searchQuery: string | undefined = $state();
+    let dropdownDisplayed: boolean = $derived(!!searchQuery);
+    let displayedMedications: PaginatedListIterator<Amp> | undefined
+    let pages: MedicationType[][] = $state([]);
+    let newPages: MedicationType[][] = $state([]);
+    let {deliveryEnvironment, handleModifyPrescription}: {
+        deliveryEnvironment: string,
+        handleModifyPrescription: (medication: MedicationType) => void
+    } = $props()
 
-  async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
-    const now = Date.now()
-    const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
-    const page = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
-      return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo));
-    }).map((ampp) => {
-      return {
-        ampId: amp.id,
-        id: ampp.ctiExtended,
-        title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
-        activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-        price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : '',
-        crmLink: ampp.crmLink?.fr,
-        patientInformationLeafletLink: ampp.leafletLink?.fr,
-        blackTriangle: amp.blackTriangle,
-        speciallyRegulated: ampp.speciallyRegulated,
-        genericPrescriptionRequired: ampp.genericPrescriptionRequired,
+    async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+        const now = Date.now()
+        const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
+        const page: MedicationType[] = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+            return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo)) && ampp.dmpps?.some((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment);
+        }).map((ampp) => {
+            let dmpp = ampp.dmpps?.find((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment && dmpp.codeType == DmppCodeType.Cnk);
+            return {
+                ampId: amp.id,
+                id: ampp.ctiExtended,
+                cnk: dmpp?.code,
+                dmppProductId: dmpp?.productId,
+                title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
+                activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+                price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : '',
+                crmLink: ampp.crmLink?.fr,
+                patientInformationLeafletLink: ampp.leafletLink?.fr,
+                blackTriangle: amp.blackTriangle,
+                speciallyRegulated: ampp.speciallyRegulated,
+                genericPrescriptionRequired: ampp.genericPrescriptionRequired,
         intendedName: ampp.prescriptionName?.fr
-      }
-    }))
-
-    return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
-  }
-
-  $effect(() => {
-    let q = searchQuery;
-    if (q && q.length >= 3) {
-      const cachedQuery = q
-      pages = []
-      setTimeout(() => {
-        if (cachedQuery === searchQuery) {
-          searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
-            displayedMedications = medications;
-            if (medications) {
-              const firstPage = await loadPage(medications, 10);
-              pages = [firstPage]
             }
-          });
+        }))
+
+        return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
+    }
+
+    $effect(() => {
+        let q = searchQuery;
+        if (q && q.length >= 3) {
+            const cachedQuery = q
+            pages = []
+            setTimeout(() => {
+                if (cachedQuery === searchQuery) {
+                    searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
+                        displayedMedications = medications;
+                        if (medications) {
+                            const firstPage = await loadPage(medications, 10);
+                            pages = [firstPage]
+                        }
+                    });
+                }
+            }, 100)
+
         }
-      }, 100)
+    });
 
+    const loadMore = async () => {
+        if (displayedMedications) {
+            newPages = [await loadPage(displayedMedications, 10)]
+            pages = [...pages, ...newPages]
+        }
     }
-  });
-
-  const loadMore = async () => {
-    if (displayedMedications) {
-      newPages = [await loadPage(displayedMedications, 10)]
-      pages = [...pages, ...newPages]
-    }
-  }
 
 
 </script>

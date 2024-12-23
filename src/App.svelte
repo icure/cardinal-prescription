@@ -15,7 +15,7 @@
 </script>
 
 <main>
-    <PrescribeMedicationsSearch {handleModifyPrescription}/>
+    <PrescribeMedicationsSearch deliveryEnvironment="P" {handleModifyPrescription}/>
     {#if !!selectedMedication && showAddMedicationModal}
         <AddMedicationModal {selectedMedication} handleClose={()=> showAddMedicationModal = false}/>
     {/if}
