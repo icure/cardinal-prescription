@@ -19,7 +19,7 @@
     {#if !!selectedMedication && showAddMedicationModal}
         <AddMedicationModal {selectedMedication} handleClose={()=> showAddMedicationModal = false}/>
     {/if}
-    <Prescriptions/>
+    <Prescriptions {handleModifyPrescription}/>
 </main>
 
 <style>

@@ -1,15 +1,21 @@
 <script lang="ts">
-  import type {PrescriptionType} from "../types/index.svelte";
+  import type {MedicationType} from "../types/index.svelte";
   import PrescriptionRow from "./PrescriptionRow.svelte";
   import Button from "./common/Button.svelte";
 
-  const fakePrescriptions: PrescriptionType[] = [{
+  let {handleModifyPrescription}: { handleModifyPrescription: (medication: MedicationType) => void } = $props()
+
+  const fakeMedicationsToPrescribe: MedicationType[] = [{
     ampId: '0',
     title: 'Anafranil 25 mg compr. enr. 120',
     dosage: 'As needed for pain/fever (maximum 3 days without consulting a doctor)',
     blackTriangle: true,
     speciallyRegulated: 1,
-    genericPrescriptionRequired: true
+    genericPrescriptionRequired: true,
+    activeIngredient: 'string',
+    price: 'string',
+    crmLink: 'string',
+    patientInformationLeafletLink: 'string',
   },
     {
       ampId: '1',
@@ -17,14 +23,22 @@
       dosage: 'Sedation is observed starting at single bolus doses of 0.05 to 0.075 mg/kg in healthy young adults, with an onset of 1 to 2 min following dosing.',
       blackTriangle: true,
       speciallyRegulated: 2,
-      genericPrescriptionRequired: true
+      genericPrescriptionRequired: true,
+      activeIngredient: 'string',
+      price: 'string',
+      crmLink: 'string',
+      patientInformationLeafletLink: 'string',
     },
     {
       ampId: '2',
       title: 'Paracetamol EG Forte 1 g compr. pellic. 120',
       dosage: '1 pill per 1 day, 5 days',
       blackTriangle: false,
-      genericPrescriptionRequired: false
+      genericPrescriptionRequired: false,
+      activeIngredient: 'string',
+      price: 'string',
+      crmLink: 'string',
+      patientInformationLeafletLink: 'string',
     },
     {
       ampId: '3',
@@ -32,17 +46,21 @@
       dosage: '2 pill per 1 day, 15 days',
       blackTriangle: false,
       speciallyRegulated: 0,
-      genericPrescriptionRequired: true
+      genericPrescriptionRequired: true,
+      activeIngredient: 'string',
+      price: 'string',
+      crmLink: 'string',
+      patientInformationLeafletLink: 'string',
     },
   ];
 </script>
 
-{#if fakePrescriptions}
+{#if fakeMedicationsToPrescribe}
     <div class='prescriptions'>
         <p class='prescriptions__title'>Prescriptions:</p>
         <div class='prescriptions__rows'>
-            {#each fakePrescriptions as prescription}
-                <PrescriptionRow {prescription}/>
+            {#each fakeMedicationsToPrescribe as medication}
+                <PrescriptionRow {medication} {handleModifyPrescription}/>
             {/each}
         </div>
         <div class='prescriptions__footer'>

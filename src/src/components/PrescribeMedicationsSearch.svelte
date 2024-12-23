@@ -82,7 +82,7 @@
             <SearchIcn/>
         </label>
     </div>
-    {#if dropdownDisplayed}
+    {#if (pages.length !== 0 && dropdownDisplayed)}
         <div class='prescribeMedications__dropdown'>
             {#each pages as medicationPage}
                 {#each medicationPage as medication}
@@ -166,8 +166,7 @@
 
     &__dropdown {
       width: 100%;
-      height: auto;
-      max-height: 380px;
+      height: 380px;
       overflow-y: scroll;
       display: flex;
       flex-direction: column;

@@ -103,7 +103,6 @@
     validateForm(data);
 
     if (isFormValid(data)) {
-      console.log(data);
       handleClose()
     } else {
       console.log('Invalid Form');
