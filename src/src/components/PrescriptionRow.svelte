@@ -1,12 +1,14 @@
 <script lang='ts'>
-  import type {PrescriptionType} from '../types/index.svelte';
+  import type {MedicationType} from '../types/index.svelte';
   import {BlackTriangleIcn, DeleteIcn, EditIcn, PillsBottleIcn, PrescriptionIcn} from '../icons/index.svelte';
   import {onMount} from "svelte";
   import Tooltip from "./common/Tooltip.svelte";
 
-  let {prescription}: {
-    prescription: PrescriptionType,
+  let {medication, handleModifyPrescription}: {
+    medication: MedicationType,
+    handleModifyPrescription: (medication: MedicationType) => void
   } = $props();
+
 
   let child: HTMLElement;
   let distanceToParentTop: number = $state(0);
@@ -54,23 +56,23 @@
         <div class='header__prescription'>
             <div class='header__prescription__content'>
                 <div class='header__prescription__content__title'>
-                    <h3>{prescription.title}</h3>
+                    <h3>{medication.title}</h3>
                     <div class='header__prescription__content__title__infographics'>
-                        {#if prescription.blackTriangle}
+                        {#if medication.blackTriangle}
                             <div class='header__prescription__content__title__infographics__item'>
                                 <Tooltip content='Black triangle'
                                          iconSnippet={blackTriangleIcn}
                                          orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
                             </div>
                         {/if}
-                        {#if !!prescription.speciallyRegulated}
+                        {#if !!medication.speciallyRegulated}
                             <div class='header__prescription__content__title__infographics__item'>
-                                <Tooltip content={getSpecialRegulation(prescription.speciallyRegulated)}
+                                <Tooltip content={getSpecialRegulation(medication.speciallyRegulated)}
                                          iconSnippet={specialRegulationsIcn}
                                          orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
                             </div>
                         {/if}
-                        {#if prescription.genericPrescriptionRequired}
+                        {#if medication.genericPrescriptionRequired}
                             <div class='header__prescription__content__title__infographics__item'>
                                 <Tooltip content='Generic prescription required' iconSnippet={prescriptionRequiredIcn}
                                          orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
@@ -78,12 +80,12 @@
                         {/if}
                     </div>
                 </div>
-                <p>{prescription.dosage}</p>
+                <p>{medication.dosage}</p>
             </div>
         </div>
     </div>
     <div class="actions">
-        <button class="actions__btn" onclick={()=> console.log('edit')}
+        <button class="actions__btn" onclick={() => handleModifyPrescription(medication)}
                 onmouseenter={() => editIcnColor = colors.blue}
                 onmouseleave={() => editIcnColor = colors.gray}>
             <EditIcn pathFill={editIcnColor}/>

@@ -10,15 +10,6 @@
     blackTriangle?: boolean;
     speciallyRegulated?: number;
     genericPrescriptionRequired?: boolean;
-  };
-
-  export type PrescriptionType = {
-    ampId: string;
-    id?: string;
-    title: string;
-    dosage: string;
-    blackTriangle?: boolean;
-    speciallyRegulated?: number;
-    genericPrescriptionRequired?: boolean;
+    dosage?: string
   };
 </script>
