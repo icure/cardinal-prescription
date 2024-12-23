@@ -6,6 +6,9 @@
   import Select from './common/Select.svelte';
   import Textarea from './common/Textarea.svelte';
   import type {MedicationType} from "../types/index.svelte";
+  import {Medication} from '@icure/be-fhc-api'
+  import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
+  import {Code} from "@icure/be-fhc-api/model/Code";
 
   let {selectedMedication, handleClose}: { selectedMedication: MedicationType, handleClose: () => void } = $props();
 
@@ -103,6 +106,40 @@
     validateForm(data);
 
     if (isFormValid(data)) {
+      console.log('data')
+      console.log(data)
+
+      const medicationToSend = new Medication({
+        medicinalProduct: new Medicinalproduct({
+          samId: selectedMedication.ampId,
+          intendedcds: [new Code(selectedMedication.id), new Code(selectedMedication.ampId)],
+          intendedname: selectedMedication.intendedName
+        }),
+        beginMoment: data.treatmentStartDate,
+        endMoment: data.executableUntil,
+
+        //     compoundPrescription?: string;
+        //     compoundPrescriptionV2?: CompoundPrescription;
+        //     substanceProduct?: Substanceproduct;
+        //
+        //     numberOfPackages?: number;
+        //     batch?: string;
+        //     commentForDelivery?: string;
+
+        //     temporality?: Code;
+        //     duration?: Duration;
+        //     knownUsage?: boolean;
+        //     regimen?: Array<RegimenItem>;
+        //     renewal?: MedicationRenewal;
+        //     intakeRoute?: Code;
+        //     instructionForPatient?: string;
+        //     instructionsForReimbursement?: Medication.InstructionsForReimbursementEnum;
+        //     substitutionAllowed?: boolean;
+        //     recipeInstructionForPatient?: string;
+        //     options?: {
+        //       [key: string]: Content;
+        // };
+      })
       handleClose()
     } else {
       console.log('Invalid Form');

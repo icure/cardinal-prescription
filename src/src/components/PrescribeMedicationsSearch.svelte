@@ -37,6 +37,7 @@
         blackTriangle: amp.blackTriangle,
         speciallyRegulated: ampp.speciallyRegulated,
         genericPrescriptionRequired: ampp.genericPrescriptionRequired,
+        intendedName: ampp.prescriptionName?.fr
       }
     }))
 

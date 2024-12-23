@@ -11,5 +11,19 @@
     speciallyRegulated?: number;
     genericPrescriptionRequired?: boolean;
     dosage?: string
+    intendedName?: string
   };
+
+  export type AddMedicationFormTYpe = {
+    dosage: string
+    duration: string
+    durationTimeUnit: string
+    executableUntil: number
+    instructionsForPatient: string
+    pharmacyVisibility: string
+    prescriberVisibility: string
+    prescriptionsNumber: number
+    refundInstructions: string
+    treatmentStartDate: number
+  }
 </script>
