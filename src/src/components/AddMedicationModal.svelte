@@ -141,7 +141,7 @@
   // Extra fields
   let showExtraFields = $state(false);
   let recipeInstructionForPatient: string | undefined = $state(selectedMedication.recipeInstructionForPatient ?? undefined);
-  let refundInstructions: string | undefined = $state(selectedMedication.instructionsForReimbursement ?? undefined);
+  let instructionsForReimbursement: string | undefined = $state(selectedMedication.instructionsForReimbursement ?? undefined);
   let prescriberVisibility: string = $state(prescriberVisibilityOptions[0].value);
   let pharmacyVisibility: string = $state(pharmacyVisibilityOptions[0].value);
 
@@ -202,12 +202,15 @@
       duration: number | undefined;
       durationTimeUnit: string;
 
+      treatmentStartDate: string | undefined;
+      executableUntil: string | undefined;
+
       prescriptionsNumber: number | undefined;
       periodicityTimeUnit: string;
       periodicityDaysNumber: number | undefined;
 
       recipeInstructionForPatient: string | undefined;
-      refundInstructions: string | undefined;
+      instructionsForReimbursement: string | undefined;
       prescriberVisibility: string;
       pharmacyVisibility: string;
     } = {
@@ -218,7 +221,7 @@
       periodicityTimeUnit,
       periodicityDaysNumber,
       recipeInstructionForPatient,
-      refundInstructions,
+      instructionsForReimbursement,
       prescriberVisibility,
       pharmacyVisibility,
     };
@@ -336,8 +339,8 @@
                         {#if !!recipeInstructionForPatient}
                             <p>{recipeInstructionForPatient}</p>
                         {/if}
-                        {#if !!refundInstructions}
-                            <p>{refundInstructions}</p>
+                        {#if !!instructionsForReimbursement}
+                            <p>{instructionsForReimbursement}</p>
                         {/if}
                         {#if !!prescriberVisibility}
                             <p>{prescriberVisibility}</p>
@@ -352,8 +355,8 @@
                         <div class=' addMedicationForm__body__content__inputs'>
 					<Textarea label='Instructions pour le patient' id='recipeInstructionForPatient'
                               bind:defaultValue={recipeInstructionForPatient}/>
-                            <Select label='Instructions remboursement' id='refundInstructions'
-                                    bind:defaultValue={refundInstructions} options={reimbursementOptions}/>
+                            <Select label='Instructions remboursement' id='instructionsForReimbursement'
+                                    bind:defaultValue={instructionsForReimbursement} options={reimbursementOptions}/>
 
                             <Select label='Visibilité prescripteur' bind:defaultValue={prescriberVisibility}
                                     id='prescriberVisibility' options={prescriberVisibilityOptions}/>
