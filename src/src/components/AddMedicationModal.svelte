@@ -6,23 +6,119 @@
   import Select from './common/Select.svelte';
   import Textarea from './common/Textarea.svelte';
   import type {MedicationType} from "../types/index.svelte";
-  import {Medication} from '@icure/be-fhc-api'
+  import {Duration, Medication, MedicationRenewal} from '@icure/be-fhc-api'
   import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
   import {Code} from "../utils/code-utils";
 
-  let {selectedMedication, handleClose}: { selectedMedication: MedicationType, handleClose: () => void } = $props();
+  let {selectedMedication, handleClose, handleSave}: {
+    selectedMedication: MedicationType,
+    handleClose: () => void,
+    handleSave: (medication: Medication) => void
+  } = $props();
 
-  const medicationTitle = selectedMedication.title;
+  const medicationTitle = selectedMedication.title ?? selectedMedication.medicinalProduct?.intendedname;
 
-  const durationTimeUnits = ['jour', 'semaine'];
-  const periodicityTimeUnits = ['aucune', 'semaine', '2 semaines', '3 semaines', 'x nombre de jours'];
-  const prescriberVisibilityOptions = [
-    'Visible pour tous les prescripteurs',
-    'Visible uniquement pour moi-même',
-    'Visible uniquement pour le titulaire du DMG'
+  const durationTimeUnits = [
+    {
+      value: 'jour',
+      label: 'jour'
+    },
+    {
+      value: 'semaine',
+      label: 'semaine'
+    }];
+  const periodicityTimeUnits = [
+    {
+      value: 'aucune',
+      label: 'aucune'
+    },
+    {
+      value: 'semaine',
+      label: 'semaine'
+    },
+    {
+      value: '2 semaines',
+      label: '2 semaines',
+    },
+    {
+      value: '3 semaines',
+      label: '3 semaines',
+    },
+    {
+      value: 'x nombre de jours',
+      label: 'x nombre de jours'
+    }
   ];
-  const pharmacyVisibilityOptions = ['Le médicament est visible par tous les pharmaciens', 'Le médicament n`est pas visible par tous les pharmaciens'];
+  const prescriberVisibilityOptions = [
+    {
+      value: 'Visible pour tous les prescripteurs',
+      label: 'Visible pour tous les prescripteurs'
+    },
+    {
+      value: 'Visible uniquement pour moi-même',
+      label: 'Visible uniquement pour moi-même',
+    },
+    {
+      value: 'Visible uniquement pour le titulaire du DMG',
+      label: 'Visible uniquement pour le titulaire du DMG',
+    }];
+  const pharmacyVisibilityOptions = [
+    {
+      value: 'Le médicament est visible par tous les pharmaciens',
+      label: 'Le médicament est visible par tous les pharmaciens',
+    },
+    {
+      value: 'Le médicament n`est pas visible par tous les pharmaciens',
+      label: 'Le médicament n`est pas visible par tous les pharmaciens'
+    }
+  ];
 
+  const reimbursementOptions = [
+    {
+      value: null,
+      label: 'None'
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.PAYINGTHIRDPARTY,
+      label: "Paying Third Party",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.FIRSTDOSE,
+      label: "First Dose",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.SECONDDOSE,
+      label: "Second Dose",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.THIRDDOSE,
+      label: "Third Dose",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.CHRONICKINDEYDISEASE,
+      label: "Chronic Kidney Disease",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.DIABETESTREATMENT,
+      label: "Diabetes Treatment",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.DIABETESCONVENTION,
+      label: "Diabetes Convention",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.NOTREIMBURSABLE,
+      label: "Not Reimbursable",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.EXPLAINMEDICATION,
+      label: "Explain Medication",
+    },
+    {
+      value: Medication.InstructionsForReimbursementEnum.DIABETESSTARTPATH,
+      label: "Diabetes Start Path",
+    },
+  ];
 
   const today = new Date();
   const nextYear = new Date(today);
@@ -30,22 +126,24 @@
   const formattedToday = today.toISOString().split('T')[0];
   const formattedNextYear = nextYear.toISOString().split('T')[0];
 
-  // Compulsory fields
-  let dosage: string | undefined = $state();
-  let duration: number | undefined = $state(1);
-  let durationTimeUnit: string = $state(durationTimeUnits[0]);
   let treatmentStartDate: string | undefined = $state(formattedToday);
   let executableUntil: string | undefined = $state(formattedNextYear);
+
+  // Compulsory fields
+  let dosage: string | undefined = $state(selectedMedication.instructionForPatient ?? undefined);
+  let duration: number | undefined = $state(1);
+  let durationTimeUnit: string = $state(durationTimeUnits[0].value);
+
   let prescriptionsNumber: number | undefined = $state(1);
-  let periodicityTimeUnit: string = $state(periodicityTimeUnits[0]);
+  let periodicityTimeUnit: string = $state(periodicityTimeUnits[0].value);
   let periodicityDaysNumber: number | undefined = $state();
 
   // Extra fields
   let showExtraFields = $state(false);
-  let instructionsForPatient: string | undefined = $state();
-  let refundInstructions: string | undefined = $state();
-  let prescriberVisibility: string = $state(prescriberVisibilityOptions[0]);
-  let pharmacyVisibility: string = $state(pharmacyVisibilityOptions[0]);
+  let recipeInstructionForPatient: string | undefined = $state(selectedMedication.recipeInstructionForPatient ?? undefined);
+  let refundInstructions: string | undefined = $state(selectedMedication.instructionsForReimbursement ?? undefined);
+  let prescriberVisibility: string = $state(prescriberVisibilityOptions[0].value);
+  let pharmacyVisibility: string = $state(pharmacyVisibilityOptions[0].value);
 
   let inputsToValidate: string[] = $state([]);
 
@@ -77,7 +175,7 @@
     });
   });
 
-  const isFormValid = (data: { [inputName: string]: any }): boolean => {
+  const isFormValid = (): boolean => {
     return !Object.keys(errors).some((inputName) =>
       Object.keys(errors[inputName]).some(
         (errorName) => errors[inputName][errorName],
@@ -99,97 +197,83 @@
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
 
-    const data: Record<string, FormDataEntryValue> = {};
+    let data: {
+      dosage: string | undefined;
+      duration: number | undefined;
+      durationTimeUnit: string;
+
+      prescriptionsNumber: number | undefined;
+      periodicityTimeUnit: string;
+      periodicityDaysNumber: number | undefined;
+
+      recipeInstructionForPatient: string | undefined;
+      refundInstructions: string | undefined;
+      prescriberVisibility: string;
+      pharmacyVisibility: string;
+    } = {
+      dosage,
+      duration,
+      durationTimeUnit,
+      prescriptionsNumber,
+      periodicityTimeUnit,
+      periodicityDaysNumber,
+      recipeInstructionForPatient,
+      refundInstructions,
+      prescriberVisibility,
+      pharmacyVisibility,
+    };
+
     for (const [key, value] of formData.entries()) {
       data[key] = value;
     }
     validateForm(data);
 
-    if (isFormValid(data) && selectedMedication.cnk) {
+    if (isFormValid()) {
+
       console.log('data')
       console.log(data)
 
-        /*
-        {
-  "expirationDate": 20250113,
-  "feedback": true,
-  "medications": [
-    {
-      "medicinalProduct": {
-        "intendedname": "Dafalgan 500 mg comp. 20",
-        "intendedcds": [
-          {
-            "type": "CD-DRUG-CNK",
-            "code": "2933893"
-          }
-        ],
-        "samId": "VerV3Rbb9zSDZMwDnbO8+CRtsV94A3EyT/GNXfVQYMY="
-      },
-      "beginMoment": 20241014,
-      "endMoment": 20241020,
-      "instructionForPatient": "1 dose le matin, 1 à midi, 1 le soir",
-      "instructionsForReimbursement": null,
-      "substitutionAllowed": true
-    }
-  ],
-  "patient": {
-    "firstName": "John",
-    "lastName": "Dupont",
-    "gender": "male",
-    "ssin": "77090948948",
-    "dateOfBirth": 19770909
-  },
-  "samVersion": "E.20241013_020020",
-  "packageName": "phyMedispring[Medispring/1.0]-freehealth-connector",
-  "packageVersion": "1.0]-freehealth-connector",
-  "vendorEmail": "support@medispring.be",
-  "vendorName": "phyMedispring[Medispring",
-  "vendorPhone": "+3278077050",
-  "vision": "",
-  "visionOthers": "open",
-  "hcp": {
-    "firstName": "Maxime",
-    "lastName": "Mennechet",
-    "nihii": "18785633004",
-    "ssin": "92092412781"
-  },
-  "executorId": "5cb3b240-d38b-45f4-b3b2-40d38b45f4f7",
-  "lang": "fr"
-}
+      const getMedicinalProduct = () => {
+        if (selectedMedication.medicinalProduct) {
+          return selectedMedication.medicinalProduct
+        } else if (!selectedMedication.medicinalProduct && selectedMedication.cnk) {
+          return new Medicinalproduct({
+            samId: selectedMedication.dmppProductId,
+            intendedcds: [Code.from("CD-DRUG-CNK", selectedMedication.cnk)],
+            intendedname: selectedMedication.intendedName
+          })
+        }
+      }
+      const getDurationInDays = (timeUnit: string, value: number) => {
+        if (timeUnit === "jour") {
+          return value
+        } else if (timeUnit === "semaine") {
+          return value * 7
+        }
+      }
+      const medication = new Medication({
+        medicinalProduct: getMedicinalProduct(),
+        beginMoment: parseInt((data.treatmentStartDate as string).replace(/-/g, '')),
+        endMoment: parseInt((data.executableUntil as string).replace(/-/g, '')),
 
-         */
-
-      const medicationToSend = new Medication({
-        medicinalProduct: new Medicinalproduct({
-          samId: selectedMedication.ampId,
-          intendedcds: [Code.from("CD-DRUG-CNK", selectedMedication.cnk)],
-          intendedname: selectedMedication.intendedName
+        // new Code for unit property
+        duration: new Duration({
+          unit: Code.from("CD-TIMEUNIT", "D"),
+          value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
         }),
-        beginMoment: data.treatmentStartDate,
-        endMoment: data.executableUntil,
 
-        //     compoundPrescription?: string;
-        //     compoundPrescriptionV2?: CompoundPrescription;
-        //     substanceProduct?: Substanceproduct;
-        //
-        //     numberOfPackages?: number;
-        //     batch?: string;
-        //     commentForDelivery?: string;
+        renewal: new MedicationRenewal({
+          decimal: prescriptionsNumber,
+          duration: new Duration({unit: Code.from("CD-TIMEUNIT", "D"), value: data.periodicityDaysNumber})
+        }),
 
-        //     temporality?: Code;
-        //     duration?: Duration;
-        //     knownUsage?: boolean;
-        //     regimen?: Array<RegimenItem>;
-        //     renewal?: MedicationRenewal;
-        //     intakeRoute?: Code;
-        //     instructionForPatient?: string;
-        //     instructionsForReimbursement?: Medication.InstructionsForReimbursementEnum;
-        //     substitutionAllowed?: boolean;
-        //     recipeInstructionForPatient?: string;
-        //     options?: {
-        //       [key: string]: Content;
-        // };
+        instructionForPatient: data.dosage,
+        recipeInstructionForPatient: data.recipeInstructionForPatient,
+        instructionsForReimbursement: data.instructionsForReimbursement,
+        // substitutionAllowed: data.substitutionAllowed
       })
+
+      handleSave(medication)
       handleClose()
     } else {
       console.log('Invalid Form');
@@ -249,8 +333,8 @@
                         bind:checked={showExtraFields}/>
                 {#if !showExtraFields}
                     <div class=" addMedicationForm__body__extraFieldsPreview">
-                        {#if !!instructionsForPatient}
-                            <p>{instructionsForPatient}</p>
+                        {#if !!recipeInstructionForPatient}
+                            <p>{recipeInstructionForPatient}</p>
                         {/if}
                         {#if !!refundInstructions}
                             <p>{refundInstructions}</p>
@@ -266,10 +350,11 @@
                 {:else}
                     <div class=' addMedicationForm__body__content'>
                         <div class=' addMedicationForm__body__content__inputs'>
-					<Textarea label='Instructions pour le patient' id='instructionsForPatient'
-                              bind:defaultValue={instructionsForPatient}/>
-                            <Textarea label='Instructions remboursement' id='refundInstructions'
-                                      bind:defaultValue={refundInstructions}/>
+					<Textarea label='Instructions pour le patient' id='recipeInstructionForPatient'
+                              bind:defaultValue={recipeInstructionForPatient}/>
+                            <Select label='Instructions remboursement' id='refundInstructions'
+                                    bind:defaultValue={refundInstructions} options={reimbursementOptions}/>
+
                             <Select label='Visibilité prescripteur' bind:defaultValue={prescriberVisibility}
                                     id='prescriberVisibility' options={prescriberVisibilityOptions}/>
                             <Select label='Visibilité officine' bind:defaultValue={pharmacyVisibility}
@@ -386,38 +471,6 @@
 
       @include app.media-breakpoint-down(app.$sm) {
         padding: 8px;
-      }
-
-      &__divider {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        align-self: stretch;
-        overflow: hidden;
-
-        &__btnHolder {
-          position: relative;
-
-          &::before, &::after {
-            content: '';
-            display: block;
-            height: 1px;
-            width: 320px;
-            border-bottom: 1px dashed app.$gray-400;
-            position: absolute;
-            top: 50%;
-          }
-
-          &::before {
-            left: -330px;
-          }
-
-          &::after {
-            right: -330px;
-          }
-        }
       }
 
       &__content {

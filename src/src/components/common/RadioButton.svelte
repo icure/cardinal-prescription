@@ -1,29 +1,26 @@
 <script lang='ts'>
-  let {label, required, id, disabled, options, defaultValue = $bindable()}: {
+  let {label, required, id, defaultValue = $bindable(), errorMessage}: {
     label: string,
     id: string,
     required?: boolean,
-    disabled?: boolean
-    options: { value: string | null, label: string } []
-    defaultValue?: string
+    defaultValue?: string | number | Date
+    errorMessage?: string
   } = $props();
 </script>
 
-<div class='selectInput'>
+<div class='radioBtnWrapper'>
     <label class:required for={id}><span>*</span>{label}</label>
-    <select {id} name={id} bind:value={defaultValue} {disabled}>
-        {#each options as option}
-            <option value={option.value}>
-                {option.label}
-            </option>
-        {/each}
-    </select>
+    <input class:errorMessage {id} name={id} type="radio" bind:value={defaultValue}/>
+    {#if !!errorMessage}
+        <p class='radioBtnWrapper__error'>{errorMessage}</p>
+    {/if}
 </div>
+
 
 <style lang='scss'>
   @use '../../../style/app';
 
-  .selectInput {
+  .radioBtnWrapper {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -53,14 +50,14 @@
       }
     }
 
-    select {
+    input {
       display: flex;
       height: 32px;
       padding: 5px 12px;
       align-items: center;
       gap: 4px;
       align-self: stretch;
-      cursor: pointer;
+      cursor: pointer !important;
 
       border-radius: 6px;
       border: 1px solid app.$gray-400;
@@ -68,14 +65,17 @@
       box-shadow: 0 1px 1px 0 rgba(218, 218, 222, 0.25);
 
       color: app.$gray-600;
+      font-family: 'Inter Variable', sans-serif;
       font-size: 14px;
       font-style: normal;
       font-weight: 400;
       line-height: 22px; /* 169.231% */
 
+
       &::placeholder {
         color: app.$gray-600;
-        opacity: 0.7;
+        font-family: 'Inter Variable', sans-serif;
+        opacity: 0.5;
         font-size: 14px;
       }
 
@@ -93,8 +93,15 @@
           border-color: app.$gray-400;
         }
       }
+
+      &.errorMessage {
+        border-color: red;
+      }
     }
 
-
+    &__error {
+      color: red;
+      font-size: 13px;
+    }
   }
 </style>

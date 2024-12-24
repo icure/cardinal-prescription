@@ -1,34 +1,12 @@
 <script lang='ts'>
-  import type {MedicationType} from '../types/index.svelte';
-  import {BlackTriangleIcn, DeleteIcn, EditIcn, PillsBottleIcn, PrescriptionIcn} from '../icons/index.svelte';
-  import {onMount} from "svelte";
-  import Tooltip from "./common/Tooltip.svelte";
+  import {DeleteIcn, EditIcn} from '../icons/index.svelte';
+  import type {MedicationType} from "../types/index.svelte";
+
 
   let {medication, handleModifyPrescription}: {
     medication: MedicationType,
     handleModifyPrescription: (medication: MedicationType) => void
   } = $props();
-
-
-  let child: HTMLElement;
-  let distanceToParentTop: number = $state(0);
-
-  onMount(() => {
-    const parentTop = child.parentElement?.getBoundingClientRect();
-    const childTop = child.getBoundingClientRect();
-    distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
-  });
-
-  const getSpecialRegulation = (code: number) => {
-    switch (code) {
-      case 1:
-        return 'No narcotic, specially regulated drug'
-      case 2:
-        return 'Narcotic, specially regulated drug'
-      default:
-        return 'No special regulation'
-    }
-  }
 
   const colors = {
     red: 'red',
@@ -41,46 +19,14 @@
 
 </script>
 
-{#snippet blackTriangleIcn()}
-    <BlackTriangleIcn/>
-{/snippet}
-{#snippet specialRegulationsIcn()}
-    <PillsBottleIcn/>
-{/snippet}
-{#snippet prescriptionRequiredIcn()}
-    <PrescriptionIcn/>
-{/snippet}
-
-<div class='prescriptionRow' bind:this={child}>
+<div class='prescriptionRow'>
     <div class='header'>
         <div class='header__prescription'>
             <div class='header__prescription__content'>
                 <div class='header__prescription__content__title'>
-                    <h3>{medication.title}</h3>
-                    <div class='header__prescription__content__title__infographics'>
-                        {#if medication.blackTriangle}
-                            <div class='header__prescription__content__title__infographics__item'>
-                                <Tooltip content='Black triangle'
-                                         iconSnippet={blackTriangleIcn}
-                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
-                            </div>
-                        {/if}
-                        {#if !!medication.speciallyRegulated}
-                            <div class='header__prescription__content__title__infographics__item'>
-                                <Tooltip content={getSpecialRegulation(medication.speciallyRegulated)}
-                                         iconSnippet={specialRegulationsIcn}
-                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
-                            </div>
-                        {/if}
-                        {#if medication.genericPrescriptionRequired}
-                            <div class='header__prescription__content__title__infographics__item'>
-                                <Tooltip content='Generic prescription required' iconSnippet={prescriptionRequiredIcn}
-                                         orientation={distanceToParentTop > 70 ? 'tr' : 'br'}/>
-                            </div>
-                        {/if}
-                    </div>
+                    <h3>{medication.medicinalProduct?.intendedname}</h3>
                 </div>
-                <p>{medication.dosage}</p>
+                <p>{medication.instructionForPatient}</p>
             </div>
         </div>
     </div>
@@ -166,24 +112,6 @@
               font-size: 16px;
               font-style: normal;
               font-weight: 500;
-            }
-
-            &__infographics {
-              display: flex;
-              align-items: center;
-              gap: 2px;
-
-              &__item {
-                display: flex;
-                width: 22px;
-                height: 22px;
-                justify-content: center;
-                align-items: center;
-
-                border-radius: 16px;
-                border: 1px solid app.$orange-900;
-                background: rgba(app.$orange-500, 0.26);
-              }
             }
           }
 
