@@ -1,16 +1,16 @@
 <script lang='ts'>
-	let { label, required, id, disabled, defaultValue = $bindable() }: {
+	let { label, required, id, disabled, value = $bindable() }: {
 		label: string,
 		id: string,
 		required?: boolean,
 		disabled?: boolean,
-		defaultValue?:  string
+		value?:  string
 	} = $props();
 </script>
 
 <div class='textareaInput'>
 	<label class:required for={id}><span>*</span>{label}</label>
-	<textarea placeholder={label} name={id} {id} bind:value={defaultValue} {disabled} rows='2'></textarea>
+	<textarea placeholder={label} name={id} {id} bind:value={value} {disabled} rows='2'></textarea>
 </div>
 
 <style lang='scss'>

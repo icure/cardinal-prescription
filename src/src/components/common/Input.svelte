@@ -1,9 +1,9 @@
 <script lang='ts'>
-	let { label, required, id, defaultValue = $bindable(), disabled, type = 'text', min, max, errorMessage }: {
+	let { label, required, id, value = $bindable(), disabled, type = 'text', min, max, errorMessage }: {
 		label: string,
 		id: string,
 		required?: boolean,
-		defaultValue?: string | number | Date
+		value?: string | number | Date
 		disabled?: boolean
 		type?: 'text' | 'number' | 'date'
 		min?: number
@@ -14,7 +14,7 @@
 
 <div class='inputWrapper'>
 	<label class:required for={id}><span>*</span>{label}</label>
-	<input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={defaultValue}
+	<input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={value}
 				 {disabled} {min} {max} />
 	{#if !!errorMessage}
 		<p class='inputWrapper__error'>{errorMessage}</p>

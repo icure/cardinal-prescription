@@ -1,17 +1,17 @@
 <script lang='ts'>
-  let {label, required, id, disabled, options, defaultValue = $bindable()}: {
+  let {label, required, id, disabled, options, value = $bindable()}: {
     label: string,
     id: string,
     required?: boolean,
     disabled?: boolean
     options: { value: string | null, label: string } []
-    defaultValue?: string
+    value?: string
   } = $props();
 </script>
 
 <div class='selectInput'>
     <label class:required for={id}><span>*</span>{label}</label>
-    <select {id} name={id} bind:value={defaultValue} {disabled}>
+    <select {id} name={id} bind:value={value} {disabled}>
         {#each options as option}
             <option value={option.value}>
                 {option.label}
