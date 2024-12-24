@@ -5,7 +5,7 @@
   import Switch from './common/Switch.svelte';
   import Select from './common/Select.svelte';
   import Textarea from './common/Textarea.svelte';
-  import type {MedicationType} from "../types/index.svelte";
+  import type {AddMedicationFormType, MedicationType} from "../types/index.svelte";
   import {Duration, Medication, MedicationRenewal} from '@icure/be-fhc-api'
   import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
   import {Code} from "../utils/code-utils";
@@ -197,27 +197,13 @@
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
 
-    let data: {
-      dosage: string | undefined;
-      duration: number | undefined;
-      durationTimeUnit: string;
-
-      treatmentStartDate: string | undefined;
-      executableUntil: string | undefined;
-
-      prescriptionsNumber: number | undefined;
-      periodicityTimeUnit: string;
-      periodicityDaysNumber: number | undefined;
-
-      recipeInstructionForPatient: string | undefined;
-      instructionsForReimbursement: string | undefined;
-      prescriberVisibility: string;
-      pharmacyVisibility: string;
-    } = {
+    let data: AddMedicationFormType = {
       dosage,
       duration,
       durationTimeUnit,
+      treatmentStartDate,
       prescriptionsNumber,
+      executableUntil,
       periodicityTimeUnit,
       periodicityDaysNumber,
       recipeInstructionForPatient,

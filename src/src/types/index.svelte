@@ -18,4 +18,22 @@
     intendedName?: string;
   };
 
+  export type AddMedicationFormType = {
+    dosage: string | undefined;
+    duration: number | undefined;
+    durationTimeUnit: string;
+
+    treatmentStartDate: string | undefined;
+    executableUntil: string | undefined;
+
+    prescriptionsNumber: number | undefined;
+    periodicityTimeUnit: string;
+    periodicityDaysNumber: number | undefined;
+
+    recipeInstructionForPatient?: string;
+    instructionsForReimbursement?: string;
+    prescriberVisibility?: string;
+    pharmacyVisibility?: string;
+  }
+
 </script>
