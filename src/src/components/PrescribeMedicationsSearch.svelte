@@ -18,9 +18,9 @@
   let displayedMedications: PaginatedListIterator<Amp> | undefined
   let pages: MedicationType[][] = $state([]);
   let newPages: MedicationType[][] = $state([]);
-  let {deliveryEnvironment, handleModifyPrescription}: {
+  let {deliveryEnvironment, handleAddPrescription}: {
     deliveryEnvironment: string,
-    handleModifyPrescription: (medication: MedicationType) => void
+    handleAddPrescription: (medication: MedicationType) => void
   } = $props()
 
   async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
@@ -46,7 +46,6 @@
         intendedName: ampp.prescriptionName?.fr
       }
     }))
-
     return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
   }
 
@@ -83,9 +82,9 @@
 <div class='prescribeMedications'>
 
     <div class:dropdownDisplayed class='prescribeMedications__search'>
-        <p class='prescribeMedications__search'>Prescribe medications:</p>
+        <p class='prescribeMedications__search'>Trouver un médicament:</p>
         <label for='searchMedications' class='prescribeMedications__search__inputWrap'>
-            <input id='searchMedications' type='text' placeholder='Find the drug' bind:value={searchQuery}/>
+            <input id='searchMedications' type='text' placeholder='Trouver un médicament' bind:value={searchQuery}/>
             <SearchIcn/>
         </label>
     </div>
@@ -93,7 +92,7 @@
         <div class='prescribeMedications__dropdown'>
             {#each pages as medicationPage}
                 {#each medicationPage as medication}
-                    <MedicationRow {medication} {handleModifyPrescription}/>
+                    <MedicationRow {medication} {handleAddPrescription}/>
                 {/each}
             {/each}
             <InfiniteScroll

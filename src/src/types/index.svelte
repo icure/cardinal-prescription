@@ -1,7 +1,26 @@
 <script lang='ts' module>
-  import {Medication} from "@icure/be-fhc-api";
+  import {type Duration, Medication} from "@icure/be-fhc-api";
 
-  export type MedicationType = Medication & {
+  export type AddMedicationFormType = {
+    dosage?: string | undefined;
+    duration?: number | undefined | Duration;
+    durationTimeUnit?: string;
+
+    treatmentStartDate?: string | undefined;
+    executableUntil?: string | undefined;
+
+    prescriptionsNumber?: number | undefined;
+    periodicityTimeUnit?: string;
+    periodicityDaysNumber?: number | undefined;
+    substitutionAllowed?: boolean;
+
+    recipeInstructionForPatient?: string;
+    instructionsForReimbursement?: string;
+    prescriberVisibility?: string;
+    pharmacyVisibility?: string;
+  }
+
+  export type MedicationType = Medication & AddMedicationFormType & {
     ampId?: string;
     cnk?: string;
     dmppProductId?: string;
@@ -14,26 +33,12 @@
     blackTriangle?: boolean;
     speciallyRegulated?: number;
     genericPrescriptionRequired?: boolean;
-    dosage?: string;
     intendedName?: string;
   };
 
-  export type AddMedicationFormType = {
-    dosage: string | undefined;
-    duration: number | undefined;
-    durationTimeUnit: string;
-
-    treatmentStartDate: string | undefined;
-    executableUntil: string | undefined;
-
-    prescriptionsNumber: number | undefined;
-    periodicityTimeUnit: string;
-    periodicityDaysNumber: number | undefined;
-
-    recipeInstructionForPatient?: string;
-    instructionsForReimbursement?: string;
-    prescriberVisibility?: string;
-    pharmacyVisibility?: string;
+  export type PrescribedMedicationType = {
+    medication: Medication,
+    ampId: string,
   }
 
 </script>

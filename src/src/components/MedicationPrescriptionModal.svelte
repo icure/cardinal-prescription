@@ -5,18 +5,21 @@
   import Switch from './common/Switch.svelte';
   import Select from './common/Select.svelte';
   import Textarea from './common/Textarea.svelte';
-  import type {AddMedicationFormType, MedicationType} from "../types/index.svelte";
+  import type {AddMedicationFormType, MedicationType, PrescribedMedicationType} from "../types/index.svelte";
   import {Duration, Medication, MedicationRenewal} from '@icure/be-fhc-api'
   import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
   import {Code} from "../utils/code-utils";
+  import RadioButton from "./common/RadioButton.svelte";
+  import {v4 as uuid} from 'uuid'
 
-  let {selectedMedication, handleClose, handleSave}: {
-    selectedMedication: MedicationType,
+  let {medicationToPrescribe, handleClose, handleSave, modalTitle}: {
+    medicationToPrescribe: MedicationType,
     handleClose: () => void,
-    handleSave: (medication: Medication) => void
+    handleSave: ({}: PrescribedMedicationType) => void
+    modalTitle: string
   } = $props();
 
-  const medicationTitle = selectedMedication.title ?? selectedMedication.medicinalProduct?.intendedname;
+  const medicationTitle = medicationToPrescribe.title ?? medicationToPrescribe.medicinalProduct?.intendedname;
 
   const durationTimeUnits = [
     {
@@ -72,78 +75,99 @@
       label: 'Le médicament n`est pas visible par tous les pharmaciens'
     }
   ];
-
   const reimbursementOptions = [
     {
       value: null,
-      label: 'None'
+      label: 'Aucun'
     },
     {
       value: Medication.InstructionsForReimbursementEnum.PAYINGTHIRDPARTY,
-      label: "Paying Third Party",
+      label: "Tiers Payant",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.FIRSTDOSE,
-      label: "First Dose",
+      label: "Première Dose",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.SECONDDOSE,
-      label: "Second Dose",
+      label: "Deuxième Dose",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.THIRDDOSE,
-      label: "Third Dose",
+      label: "Troisième Dose",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.CHRONICKINDEYDISEASE,
-      label: "Chronic Kidney Disease",
+      label: "Maladie Rénale Chronique",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.DIABETESTREATMENT,
-      label: "Diabetes Treatment",
+      label: "Traitement du Diabète",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.DIABETESCONVENTION,
-      label: "Diabetes Convention",
+      label: "Convention Diabète",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.NOTREIMBURSABLE,
-      label: "Not Reimbursable",
+      label: "Non Remboursable",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.EXPLAINMEDICATION,
-      label: "Explain Medication",
+      label: "Explication du Médicament",
     },
     {
       value: Medication.InstructionsForReimbursementEnum.DIABETESSTARTPATH,
-      label: "Diabetes Start Path",
+      label: "Parcours Initial Diabète",
     },
   ];
 
-  const today = new Date();
-  const nextYear = new Date(today);
-  nextYear.setFullYear(today.getFullYear() + 1);
-  const formattedToday = today.toISOString().split('T')[0];
-  const formattedNextYear = nextYear.toISOString().split('T')[0];
+  const formatDateForInput = (dateNumber: number) => {
+    const year = Math.floor(dateNumber / 10000);
+    const month = Math.floor((dateNumber % 10000) / 100).toString().padStart(2, '0'); // Zero-pad month
+    const day = (dateNumber % 100).toString().padStart(2, '0'); // Zero-pad day
 
-  let treatmentStartDate: string | undefined = $state(formattedToday);
-  let executableUntil: string | undefined = $state(formattedNextYear);
+    return `${year}-${month}-${day}`; // Format as YYYY-MM-DD
+  }
+
+  const getTreatmentStartDate = () => {
+    if (medicationToPrescribe.beginMoment) {
+      return formatDateForInput(medicationToPrescribe.beginMoment)
+    } else {
+      return new Date().toISOString().split('T')[0]
+    }
+  }
+  const getExecutableUntilDate = () => {
+    if (medicationToPrescribe.endMoment) {
+      return formatDateForInput(medicationToPrescribe.endMoment);
+    } else {
+      const startDay = new Date();
+      const nextYear = new Date(startDay);
+      nextYear.setFullYear(startDay.getFullYear() + 1);
+      return nextYear.toISOString().split('T')[0];
+    }
+  }
 
   // Compulsory fields
-  let dosage: string | undefined = $state(selectedMedication.instructionForPatient ?? undefined);
-  let duration: number | undefined = $state(1);
-  let durationTimeUnit: string = $state(durationTimeUnits[0].value);
+  let dosage: string | undefined = $state(medicationToPrescribe.instructionForPatient ?? undefined);
+  let duration: number | undefined = $state(medicationToPrescribe.duration?.value ?? 1);
+  let durationTimeUnit: string = $state(medicationToPrescribe.durationTimeUnit ?? durationTimeUnits[0].value);
 
-  let prescriptionsNumber: number | undefined = $state(1);
-  let periodicityTimeUnit: string = $state(periodicityTimeUnits[0].value);
-  let periodicityDaysNumber: number | undefined = $state();
+  let treatmentStartDate: string | undefined = $state(getTreatmentStartDate());
+  let executableUntil: string | undefined = $state(getExecutableUntilDate());
+
+  let prescriptionsNumber: number | undefined = $state(medicationToPrescribe.prescriptionsNumber ?? 1);
+  let periodicityTimeUnit: string = $state(medicationToPrescribe.periodicityTimeUnit ?? periodicityTimeUnits[0].value);
+  let periodicityDaysNumber: number | undefined = $state(medicationToPrescribe.periodicityDaysNumber ?? undefined);
+
+  let substitutionAllowed: boolean = $state(medicationToPrescribe.substitutionAllowed ?? false)
 
   // Extra fields
   let showExtraFields = $state(false);
-  let recipeInstructionForPatient: string | undefined = $state(selectedMedication.recipeInstructionForPatient ?? undefined);
-  let instructionsForReimbursement: string | undefined = $state(selectedMedication.instructionsForReimbursement ?? undefined);
-  let prescriberVisibility: string = $state(prescriberVisibilityOptions[0].value);
-  let pharmacyVisibility: string = $state(pharmacyVisibilityOptions[0].value);
+  let recipeInstructionForPatient: string | undefined = $state(medicationToPrescribe.recipeInstructionForPatient ?? undefined);
+  let instructionsForReimbursement: string | undefined = $state(medicationToPrescribe.instructionsForReimbursement ?? undefined);
+  let prescriberVisibility: string = $state(medicationToPrescribe.prescriberVisibility ?? prescriberVisibilityOptions[0].value);
+  let pharmacyVisibility: string = $state(medicationToPrescribe.pharmacyVisibility ?? pharmacyVisibilityOptions[0].value);
 
   let inputsToValidate: string[] = $state([]);
 
@@ -155,6 +179,7 @@
       'treatmentStartDate',
       'executableUntil',
       'prescriptionsNumber',
+      'substitutionAllowed',
       (prescriptionsNumber && prescriptionsNumber > 1) ? 'periodicityTimeUnit' : null,
       (periodicityTimeUnit && periodicityTimeUnit === 'x nombre de jours') ? 'periodicityDaysNumber' : null
     ].filter((x): x is string => !!x)
@@ -164,37 +189,28 @@
     isRequired: 'Ce champ est obligatoire.'
   }
 
-  let errors: { [inputName: string]: any } = $state({});
-
-  // Monitor and clean errors when the corresponding input becomes valid
-  $effect(() => {
-    Object.keys(errors).forEach((inputName) => {
-      console.log(inputName)
-      console.log(errors[inputName])
-
-    });
-  });
+  let errors: { [inputName: string]: { validationError: string | undefined } } = $state({});
 
   const isFormValid = (): boolean => {
-    return !Object.keys(errors).some((inputName) =>
-      Object.keys(errors[inputName]).some(
-        (errorName) => errors[inputName][errorName],
-      ),
+    return !Object.keys(errors).some((inputName) => errors[inputName].validationError
     );
   }
 
   const validateForm = (data: { [inputName: string]: any }): void => {
-    const setError = (inputName: string, isValid: boolean): void => errors[inputName] = {
-      ...errors[inputName],
-      validationError: !isValid ? errorMessages.isRequired : null
-    };
+    const setError = (inputName: string, isValid: boolean): void => {
+      errors = {
+        ...errors,
+        [inputName]: {
+          validationError: !isValid ? errorMessages.isRequired : undefined
+        }
+      }
+    }
     const isRequiredFieldValid = (value: string | number) => value != null && value !== '';
     inputsToValidate.forEach((input) => setError(input, isRequiredFieldValid(data[input])))
   }
 
   const handleSubmit = (e: SubmitEvent): void => {
     e.preventDefault();
-
 
     const data: AddMedicationFormType = {
       dosage,
@@ -205,6 +221,7 @@
       executableUntil,
       periodicityTimeUnit,
       periodicityDaysNumber,
+      substitutionAllowed,
       recipeInstructionForPatient,
       instructionsForReimbursement,
       prescriberVisibility,
@@ -215,13 +232,13 @@
 
     if (isFormValid()) {
       const getMedicinalProduct = () => {
-        if (selectedMedication.medicinalProduct) {
-          return selectedMedication.medicinalProduct
-        } else if (!selectedMedication.medicinalProduct && selectedMedication.cnk) {
+        if (medicationToPrescribe.medicinalProduct) {
+          return medicationToPrescribe.medicinalProduct
+        } else if (!medicationToPrescribe.medicinalProduct && medicationToPrescribe.cnk) {
           return new Medicinalproduct({
-            samId: selectedMedication.dmppProductId,
-            intendedcds: [Code.from("CD-DRUG-CNK", selectedMedication.cnk)],
-            intendedname: selectedMedication.intendedName
+            samId: medicationToPrescribe.dmppProductId,
+            intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe.cnk)],
+            intendedname: medicationToPrescribe.intendedName
           })
         }
       }
@@ -251,10 +268,10 @@
         instructionForPatient: data.dosage,
         recipeInstructionForPatient: data.recipeInstructionForPatient,
         instructionsForReimbursement: data.instructionsForReimbursement,
-        // substitutionAllowed: data.substitutionAllowed
+        substitutionAllowed: data.substitutionAllowed
       })
 
-      handleSave(medication)
+      handleSave({medication, ampId: medicationToPrescribe.ampId ?? uuid()})
       handleClose()
     } else {
       console.log('Invalid Form');
@@ -262,11 +279,11 @@
   }
 </script>
 
-<div class=" addMedicationModal">
-    <div class=" addMedicationModal__content">
+<div class="addMedicationModal">
+    <div class="addMedicationModal__content">
         <form id="prescriptionForm" class='addMedicationForm' onsubmit={(e) => handleSubmit(e)}>
             <div class=' addMedicationForm__header'>
-                <h3>Modifier la prescription</h3>
+                <h3>{modalTitle}</h3>
                 <button class=' addMedicationForm__header__closeIcn' onclick={() =>handleClose()}>
                     <CloseIcn/>
                 </button>
@@ -278,25 +295,25 @@
                                disabled
                                id='drugName'/>
                         <Input label='Posologie' id='dosage' bind:value={dosage} required
-                               errorMessage={errors.dosage?.validationError  }/>
+                               errorMessage={errors.dosage?.validationError}/>
                         <div class=' addMedicationForm__body__content__inputs__group'>
                             <Input label='Durée (nombre d’unités)' bind:value={duration} required
-                                   errorMessage={errors.duration?.validationError  }
+                                   errorMessage={errors.duration?.validationError}
                                    id='duration' type='number' min={1}/>
                             <Select label='Unité de temps' bind:value={durationTimeUnit} required
                                     id='durationTimeUnit' options={durationTimeUnits}/>
                         </div>
                         <div class=' addMedicationForm__body__content__inputs__group'>
                             <Input label='Date début du traitement' bind:value={treatmentStartDate} required
-                                   errorMessage={errors.treatmentStartDate?.validationError  }
+                                   errorMessage={errors.treatmentStartDate?.validationError}
                                    id='treatmentStartDate' type='date'/>
                             <Input label='Exécutable jusqu`au' bind:value={executableUntil} required
-                                   errorMessage={errors.executableUntil?.validationError  }
+                                   errorMessage={errors.executableUntil?.validationError}
                                    id='executableUntil' type='date'/>
                         </div>
                         <div class='addMedicationForm__body__content__inputs__group'>
                             <Input label='Nombre de prescriptions' bind:value={prescriptionsNumber} required
-                                   errorMessage={errors.prescriptionsNumber?.validationError  }
+                                   errorMessage={errors.prescriptionsNumber?.validationError}
                                    id='prescriptionsNumber' type='number' min={1} max={12}/>
                             {#if prescriptionsNumber && prescriptionsNumber > 1}
                                 <Select label='Périodicité' bind:value={periodicityTimeUnit} required
@@ -309,26 +326,37 @@
                             {/if}
                         </div>
                         <div class='addMedicationForm__body__content__inputs__radioBtns'>
-                            <!--                            <RadioButton id="contactChoice1" name="contact" value="yes" label="yes"/>-->
+                            <RadioButton name="substitutionAllowed" bind:value={substitutionAllowed}
+                                         label="Substitution autorisée"
+                                         options={[{label: 'Non', value: false, id: 'substitutionIsNotAllowed'}, {label: "Oui", value: true, id: 'substitutionIsAllowed'}]}
+                                         required
+                                         errorMessage={errors.substitutionAllowed?.validationError}
+                            />
                         </div>
                     </div>
                 </div>
                 <Switch id='showExtraFields' value='Afficher plus'
                         bind:checked={showExtraFields}/>
                 {#if !showExtraFields}
-                    <div class=" addMedicationForm__body__extraFieldsPreview">
-                        {#if !!recipeInstructionForPatient}
-                            <p>{recipeInstructionForPatient}</p>
-                        {/if}
-                        {#if !!instructionsForReimbursement}
-                            <p>{instructionsForReimbursement}</p>
-                        {/if}
-                        {#if !!prescriberVisibility}
-                            <p>{prescriberVisibility}</p>
-                        {/if}
-                        {#if !!pharmacyVisibility}
-                            <p>{pharmacyVisibility}</p>
-                        {/if}
+                    <div class="addMedicationForm__body__extraFieldsPreview">
+                        <p>
+                            <span>Instructions pour le patient:</span>
+                            <i><span>{recipeInstructionForPatient ?? 'Aucun'}</span></i>
+                        </p>
+                        <p>
+                            <span>Instructions remboursement:</span>
+                            <i><span>{reimbursementOptions?.find(x => x.value === instructionsForReimbursement)?.label ?? 'Aucun'}</span></i>
+                        </p>
+                        <p>
+                            <span>Visibilité prescripteur: </span>
+                            <i><span> {prescriberVisibility}</span></i>
+                        </p>
+
+                        <p>
+                            <span>Visibilité officine:</span>
+                            <i><span> {pharmacyVisibility}</span></i>
+                        </p>
+
                         <p></p>
                     </div>
                 {:else}

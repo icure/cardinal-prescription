@@ -4,9 +4,9 @@
   import {onMount} from "svelte";
   import Tooltip from "./common/Tooltip.svelte";
 
-  let {medication, handleModifyPrescription}: {
+  let {medication, handleAddPrescription}: {
     medication: MedicationType,
-    handleModifyPrescription: (medication: MedicationType) => void
+    handleAddPrescription: (medication: MedicationType) => void
   } = $props();
 
   let child: HTMLElement;
@@ -48,7 +48,7 @@
 <div class='medicationRow' class:isExpanded bind:this={child}>
     <div class='header'>
         <div class='header__medication'>
-            <button class='header__medication__appPrescription' onclick={() => handleModifyPrescription(medication)}>
+            <button class='header__medication__appPrescription' onclick={() => handleAddPrescription(medication)}>
                 <Tooltip content='Modify the prescription' iconSnippet={plusIcn}
                          orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
             </button>

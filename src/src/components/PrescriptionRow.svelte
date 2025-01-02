@@ -1,11 +1,11 @@
 <script lang='ts'>
   import {DeleteIcn, EditIcn} from '../icons/index.svelte';
-  import type {MedicationType} from "../types/index.svelte";
+  import type {PrescribedMedicationType} from "../types/index.svelte";
 
-
-  let {medication, handleModifyPrescription}: {
-    medication: MedicationType,
-    handleModifyPrescription: (medication: MedicationType) => void
+  let {medicationToPrescribe, handleModifyPrescription, handleDeletePrescription}: {
+    medicationToPrescribe: PrescribedMedicationType,
+    handleModifyPrescription: (medication: PrescribedMedicationType) => void
+    handleDeletePrescription: (medication: PrescribedMedicationType) => void
   } = $props();
 
   const colors = {
@@ -24,19 +24,19 @@
         <div class='header__prescription'>
             <div class='header__prescription__content'>
                 <div class='header__prescription__content__title'>
-                    <h3>{medication.medicinalProduct?.intendedname}</h3>
+                    <h3>{medicationToPrescribe.medication.medicinalProduct?.intendedname}</h3>
                 </div>
-                <p>{medication.instructionForPatient}</p>
+                <p>{medicationToPrescribe.medication.instructionForPatient}</p>
             </div>
         </div>
     </div>
     <div class="actions">
-        <button class="actions__btn" onclick={() => handleModifyPrescription(medication)}
+        <button class="actions__btn" onclick={() => handleModifyPrescription(medicationToPrescribe)}
                 onmouseenter={() => editIcnColor = colors.blue}
                 onmouseleave={() => editIcnColor = colors.gray}>
             <EditIcn pathFill={editIcnColor}/>
         </button>
-        <button class="actions__btn" onclick={()=> console.log('delete')}
+        <button class="actions__btn" onclick={() => handleDeletePrescription(medicationToPrescribe)}
                 onmouseenter={() => deleteIcnColor = colors.red}
                 onmouseleave={() => deleteIcnColor = colors.gray}>
             <DeleteIcn pathFill={deleteIcnColor}/>

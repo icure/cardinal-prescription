@@ -1,24 +1,24 @@
 <script lang='ts'>
-	let { label, required, id, value = $bindable(), disabled, type = 'text', min, max, errorMessage }: {
-		label: string,
-		id: string,
-		required?: boolean,
-		value?: string | number | Date
-		disabled?: boolean
-		type?: 'text' | 'number' | 'date'
-		min?: number
-		max?: number
-		errorMessage?: string
-	} = $props();
+  let {label, required, id, value = $bindable(), disabled, type = 'text', min, max, errorMessage}: {
+    label: string,
+    id: string,
+    required?: boolean,
+    value?: string | number | Date
+    disabled?: boolean
+    type?: 'text' | 'number' | 'date'
+    min?: number
+    max?: number
+    errorMessage?: string
+  } = $props();
 </script>
 
 <div class='inputWrapper'>
-	<label class:required for={id}><span>*</span>{label}</label>
-	<input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={value}
-				 {disabled} {min} {max} />
-	{#if !!errorMessage}
-		<p class='inputWrapper__error'>{errorMessage}</p>
-	{/if}
+    <label class:required for={id}><span>*</span>{label}</label>
+    <input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={value}
+           {disabled} {min} {max}/>
+    {#if !!errorMessage}
+        <p class='inputWrapper__error'>{errorMessage}</p>
+    {/if}
 </div>
 
 
@@ -99,14 +99,14 @@
         }
       }
 
-		&.errorMessage{
-			border-color: red;
-		}
+      &.errorMessage {
+        border-color: red;
+      }
     }
 
-	&__error{
-		color: red;
-		font-size: 13px;
-	}
+    &__error {
+      color: red;
+      font-size: 13px;
+    }
   }
 </style>

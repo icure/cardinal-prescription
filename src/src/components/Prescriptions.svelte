@@ -1,29 +1,36 @@
 <script lang="ts">
   import PrescriptionRow from "./PrescriptionRow.svelte";
   import Button from "./common/Button.svelte";
-  import type {Medication} from "@icure/be-fhc-api";
-  import type {MedicationType} from "../types/index.svelte";
+  import type {PrescribedMedicationType} from "../types/index.svelte";
 
-  let {handleModifyPrescription, sendPrescription, prescribedMedications}: {
-    handleModifyPrescription: (medication: Medication | MedicationType) => void,
-    sendPrescription: () => void
-    prescribedMedications: Medication[]
+  let {
+    handleModifyPrescription,
+    handleDeletePrescription,
+    handleSendPrescription,
+    handlePrintPrescription,
+    prescribedMedications
+  }: {
+    handleModifyPrescription: (medication: PrescribedMedicationType) => void,
+    handleDeletePrescription: (medication: PrescribedMedicationType) => void,
+    prescribedMedications: PrescribedMedicationType[]
+    handleSendPrescription: () => void
+    handlePrintPrescription: () => void
   } = $props()
-
 </script>
 
 {#if prescribedMedications}
     <div class='prescriptions'>
-        <p class='prescriptions__title'>Prescriptions:</p>
+        <p class='prescriptions__title'>Médicaments à prescrire:</p>
         <div class='prescriptions__rows'>
             {#each prescribedMedications as medication}
-                <PrescriptionRow {medication} {handleModifyPrescription}/>
+                <PrescriptionRow medicationToPrescribe={medication} {handleModifyPrescription}
+                                 {handleDeletePrescription}/>
             {/each}
         </div>
         <div class='prescriptions__footer'>
-            <Button title='Print' handleClick={() => console.log('Print') } view='outlined' type='reset'
+            <Button title='Print' handleClick={() => handlePrintPrescription()} view='outlined' type='reset'
                     form="prescriptionForm"/>
-            <Button title='Send' view='primary' type='submit' handleClick={() => sendPrescription() }
+            <Button title='Send' view='primary' type='submit' handleClick={() => handleSendPrescription()}
                     form="prescriptionForm"/>
         </div>
     </div>
