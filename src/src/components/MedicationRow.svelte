@@ -4,11 +4,12 @@
   import {onMount} from "svelte";
   import Tooltip from "./common/Tooltip.svelte";
 
-  let {medication, handleAddPrescription, id, focused}: {
+  let {medication, handleAddPrescription, id, focused, disableHover}: {
     medication: MedicationType,
     handleAddPrescription: (medication: MedicationType) => void
     id: string
     focused?: boolean
+    disableHover?: boolean
   } = $props();
 
   let child: HTMLElement;
@@ -47,7 +48,7 @@
     <PlusIcn/>
 {/snippet}
 
-<div class:focused class:isExpanded class='medicationRow' bind:this={child} {id}>
+<div class:focused class:isExpanded class:disableHover class='medicationRow' bind:this={child} {id}>
     <div class='header'>
         <div class='header__medication'>
             <button class='header__medication__appPrescription' onclick={() => handleAddPrescription(medication)}>
@@ -117,10 +118,13 @@
     background: #FFF;
     border: 1px solid app.$blue-200;
 
-    &:hover, &.isExpanded, &.focused {
-      border-radius: 6px;
-      border: 1px solid app.$blue-800;
-      background: #FFF;
+    &.disableHover:hover {
+      border-color: app.$blue-200;
+      box-shadow: none;
+    }
+
+    &:hover, &.isExpanded, &.focused, &.disableHover.focused:hover {
+      border-color: app.$blue-800;
       box-shadow: 0 0 0 2px rgba(app.$blue-900, 0.3);
     }
 

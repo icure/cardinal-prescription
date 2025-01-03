@@ -11,6 +11,7 @@
 
   let focusedMedicationIndex = $state(-1);
   let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
+  let disableHover = $state(false);
 
   onMount(async () => {
     sdk = await initialiseSdk()
@@ -80,25 +81,26 @@
     }
   }
 
-  // const totalPagesLength = $derived(pages.reduce((total, page) => total + page.length, 0));
   const totalPagesLength = $derived(pages.length)
-  $inspect(totalPagesLength)
-
-  $inspect(pages)
 
   function handleKeyDown(event: KeyboardEvent): void {
-    if (event.key === 'ArrowDown') {
+    const defaultActions = () => {
       event.preventDefault(); // Prevent default scrolling behavior
+      disableHover = true; // Disable hover effects
+      // setTimeout(() => (disableHover = false), 200); // Re-enable hover after a short delay
+    }
+
+    if (event.key === 'ArrowDown') {
+      defaultActions()
       focusedMedicationIndex = (focusedMedicationIndex + 1) % totalPagesLength;
       scrollToFocusedItem();
-      console.log(focusedMedicationIndex);
     } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
+      defaultActions()
       focusedMedicationIndex = (focusedMedicationIndex - 1 + totalPagesLength) % totalPagesLength;
       scrollToFocusedItem();
-      console.log(focusedMedicationIndex);
     } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
-      alert(`You selected: ${pages[focusedMedicationIndex]}`);
+      disableHover = false;
+      handleAddPrescription(pages[focusedMedicationIndex])
     }
   }
 
@@ -108,6 +110,9 @@
     }
   }
 
+  function handleMouseMove() {
+    disableHover = false; // Re-enable hover on mouse movement
+  }
 </script>
 
 <div
@@ -126,11 +131,13 @@
         </label>
     </div>
     {#if (pages.length !== 0 && dropdownDisplayed)}
-        <ul class='prescribeMedications__dropdown'>
+        <ul class='prescribeMedications__dropdown' onmousemove={handleMouseMove}>
             {#each pages as medication, index}
-                <li bind:this={resultRefs[index]}>
+                <li bind:this={resultRefs[index]} class:disableHover
+                    class={focusedMedicationIndex === index ? 'focused' : ''}>
                     <MedicationRow {medication} {handleAddPrescription} id={`result-${index}`}
                                    focused={focusedMedicationIndex === index}
+                                   disableHover={disableHover}
                     />
                 </li>
             {/each}
@@ -230,11 +237,6 @@
       li {
         width: 100%;
       }
-    }
-
-    .prescribeMedications__dropdown :global(.medicationRow:last-child) {
-      border-bottom: none;
-      border-radius: 0 0 6px 6px;
     }
   }
 
