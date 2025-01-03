@@ -9,14 +9,18 @@
 
   let sdk: any;
 
+  let focusedMedicationIndex = $state(-1);
+  let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
+
   onMount(async () => {
     sdk = await initialiseSdk()
+    focusedMedicationIndex = 0;
   });
 
   let searchQuery: string | undefined = $state();
   let dropdownDisplayed: boolean = $derived(!!searchQuery);
   let displayedMedications: PaginatedListIterator<Amp> | undefined
-  let pages: MedicationType[][] = $state([]);
+  let pages: MedicationType[] = $state([]);
   let newPages: MedicationType[][] = $state([]);
   let {deliveryEnvironment, handleAddPrescription}: {
     deliveryEnvironment: string,
@@ -60,7 +64,7 @@
             displayedMedications = medications;
             if (medications) {
               const firstPage = await loadPage(medications, 10);
-              pages = [firstPage]
+              pages = [firstPage].flat()
             }
           });
         }
@@ -72,14 +76,47 @@
   const loadMore = async () => {
     if (displayedMedications) {
       newPages = [await loadPage(displayedMedications, 10)]
-      pages = [...pages, ...newPages]
+      pages = [...pages, ...newPages].flat()
     }
   }
 
+  // const totalPagesLength = $derived(pages.reduce((total, page) => total + page.length, 0));
+  const totalPagesLength = $derived(pages.length)
+  $inspect(totalPagesLength)
+
+  $inspect(pages)
+
+  function handleKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault(); // Prevent default scrolling behavior
+      focusedMedicationIndex = (focusedMedicationIndex + 1) % totalPagesLength;
+      scrollToFocusedItem();
+      console.log(focusedMedicationIndex);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusedMedicationIndex = (focusedMedicationIndex - 1 + totalPagesLength) % totalPagesLength;
+      scrollToFocusedItem();
+      console.log(focusedMedicationIndex);
+    } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
+      alert(`You selected: ${pages[focusedMedicationIndex]}`);
+    }
+  }
+
+  function scrollToFocusedItem(): void {
+    if (focusedMedicationIndex >= 0 && resultRefs[focusedMedicationIndex]) {
+      resultRefs[focusedMedicationIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+  }
 
 </script>
 
-<div class='prescribeMedications'>
+<div
+        class='prescribeMedications'
+        role="listbox"
+        tabindex="0"
+        onkeydown={handleKeyDown}
+        aria-activedescendant={focusedMedicationIndex >= 0 ? `result-${focusedMedicationIndex}` : undefined}
+>
 
     <div class:dropdownDisplayed class='prescribeMedications__search'>
         <p class='prescribeMedications__search'>Trouver un médicament:</p>
@@ -89,16 +126,18 @@
         </label>
     </div>
     {#if (pages.length !== 0 && dropdownDisplayed)}
-        <div class='prescribeMedications__dropdown'>
-            {#each pages as medicationPage}
-                {#each medicationPage as medication}
-                    <MedicationRow {medication} {handleAddPrescription}/>
-                {/each}
+        <ul class='prescribeMedications__dropdown'>
+            {#each pages as medication, index}
+                <li bind:this={resultRefs[index]}>
+                    <MedicationRow {medication} {handleAddPrescription} id={`result-${index}`}
+                                   focused={focusedMedicationIndex === index}
+                    />
+                </li>
             {/each}
             <InfiniteScroll
                     threshold={50}
                     loadMore={() => loadMore()}/>
-        </div>
+        </ul>
     {/if}
 </div>
 
@@ -187,6 +226,10 @@
       border: 1px solid app.$burgundy-900;
       border-top: none;
       background: app.$blue-400;
+
+      li {
+        width: 100%;
+      }
     }
 
     .prescribeMedications__dropdown :global(.medicationRow:last-child) {
