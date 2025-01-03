@@ -9,6 +9,7 @@
   import {Duration, Medication, MedicationRenewal} from '@icure/be-fhc-api'
   import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
   import {Code} from "../utils/code-utils";
+  import {completePosology} from "@icure/medication-sdk";
   import RadioButton from "./common/RadioButton.svelte";
   import {v4 as uuid} from 'uuid'
 
@@ -170,6 +171,7 @@
   let pharmacyVisibility: string = $state(medicationToPrescribe.pharmacyVisibility ?? pharmacyVisibilityOptions[0].value);
 
   let inputsToValidate: string[] = $state([]);
+  let posologySuggestions: string[] = $state([]);
 
   $effect(() => {
     inputsToValidate = [
@@ -184,6 +186,15 @@
       (periodicityTimeUnit && periodicityTimeUnit === 'x nombre de jours') ? 'periodicityDaysNumber' : null
     ].filter((x): x is string => !!x)
   })
+
+  $effect(() => {
+    const dosageWhenCalled = dosage;
+    setTimeout(() => {
+      if (dosageWhenCalled === dosage) {
+         posologySuggestions = completePosology(dosageWhenCalled)
+      }
+    }, 100)
+  });
 
   const errorMessages = {
     isRequired: 'Ce champ est obligatoire.'
@@ -296,6 +307,12 @@
                                id='drugName'/>
                         <Input label='Posologie' id='dosage' bind:value={dosage} required
                                errorMessage={errors.dosage?.validationError}/>
+                        <div class='prescribeMedications__dropdown'>
+                            {#each posologySuggestions as posology}
+                                <div>{posology}</div>
+                            {/each}
+                        </div>
+
                         <div class=' addMedicationForm__body__content__inputs__group'>
                             <Input label='Durée (nombre d’unités)' bind:value={duration} required
                                    errorMessage={errors.duration?.validationError}

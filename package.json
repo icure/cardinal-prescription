@@ -13,6 +13,7 @@
     "@fontsource-variable/inter": "^5.1.0",
     "@icure/be-fhc-api": "^0.5.2",
     "@icure/cardinal-be-sam": "./tsPackage",
+    "@icure/medication-sdk": "0.0.5",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
