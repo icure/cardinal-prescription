@@ -110,7 +110,8 @@
 </script>
 
 <main>
-    <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}/>
+    <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}
+                                isMedicationPrescriptionModalOpen={showMedicationPrescriptionModal}/>
 
     {#if !!medicationToPrescribe && showMedicationPrescriptionModal}
         <MedicationPrescriptionModal

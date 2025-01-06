@@ -12,6 +12,15 @@
   import {completePosology} from "@icure/medication-sdk";
   import RadioButton from "./common/RadioButton.svelte";
   import {v4 as uuid} from 'uuid'
+  import {onDestroy, onMount} from "svelte";
+  import {clickOutside} from '../utils/clickOutside'
+  import {
+    durationTimeUnits,
+    periodicityTimeUnits,
+    pharmacyVisibilityOptions,
+    prescriberVisibilityOptions,
+    reimbursementOptions
+  } from '../helpers/index.svelte'
 
   let {medicationToPrescribe, handleClose, handleSave, modalTitle}: {
     medicationToPrescribe: MedicationType,
@@ -21,107 +30,6 @@
   } = $props();
 
   const medicationTitle = medicationToPrescribe.title ?? medicationToPrescribe.medicinalProduct?.intendedname;
-
-  const durationTimeUnits = [
-    {
-      value: 'jour',
-      label: 'jour'
-    },
-    {
-      value: 'semaine',
-      label: 'semaine'
-    }];
-  const periodicityTimeUnits = [
-    {
-      value: 'aucune',
-      label: 'aucune'
-    },
-    {
-      value: 'semaine',
-      label: 'semaine'
-    },
-    {
-      value: '2 semaines',
-      label: '2 semaines',
-    },
-    {
-      value: '3 semaines',
-      label: '3 semaines',
-    },
-    {
-      value: 'x nombre de jours',
-      label: 'x nombre de jours'
-    }
-  ];
-  const prescriberVisibilityOptions = [
-    {
-      value: 'Visible pour tous les prescripteurs',
-      label: 'Visible pour tous les prescripteurs'
-    },
-    {
-      value: 'Visible uniquement pour moi-même',
-      label: 'Visible uniquement pour moi-même',
-    },
-    {
-      value: 'Visible uniquement pour le titulaire du DMG',
-      label: 'Visible uniquement pour le titulaire du DMG',
-    }];
-  const pharmacyVisibilityOptions = [
-    {
-      value: 'Le médicament est visible par tous les pharmaciens',
-      label: 'Le médicament est visible par tous les pharmaciens',
-    },
-    {
-      value: 'Le médicament n`est pas visible par tous les pharmaciens',
-      label: 'Le médicament n`est pas visible par tous les pharmaciens'
-    }
-  ];
-  const reimbursementOptions = [
-    {
-      value: null,
-      label: 'Aucun'
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.PAYINGTHIRDPARTY,
-      label: "Tiers Payant",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.FIRSTDOSE,
-      label: "Première Dose",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.SECONDDOSE,
-      label: "Deuxième Dose",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.THIRDDOSE,
-      label: "Troisième Dose",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.CHRONICKINDEYDISEASE,
-      label: "Maladie Rénale Chronique",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.DIABETESTREATMENT,
-      label: "Traitement du Diabète",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.DIABETESCONVENTION,
-      label: "Convention Diabète",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.NOTREIMBURSABLE,
-      label: "Non Remboursable",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.EXPLAINMEDICATION,
-      label: "Explication du Médicament",
-    },
-    {
-      value: Medication.InstructionsForReimbursementEnum.DIABETESSTARTPATH,
-      label: "Parcours Initial Diabète",
-    },
-  ];
 
   const formatDateForInput = (dateNumber: number) => {
     const year = Math.floor(dateNumber / 10000);
@@ -190,8 +98,8 @@
   $effect(() => {
     const dosageWhenCalled = dosage;
     setTimeout(() => {
-      if (dosageWhenCalled === dosage) {
-         posologySuggestions = completePosology(dosageWhenCalled)
+      if (dosageWhenCalled && dosageWhenCalled === dosage) {
+        posologySuggestions = completePosology(dosageWhenCalled)
       }
     }, 100)
   });
@@ -288,29 +196,105 @@
       console.log('Invalid Form');
     }
   }
+
+
+  let focusedMedicationIndex = $state(0);
+  let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
+  let disableHover = $state(false);
+
+  onMount(async () => {
+    focusedMedicationIndex = 0;
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("mousemove", handleMouseMove);
+  });
+
+  const handleKeyDown = (event: KeyboardEvent): void => {
+    const defaultActions = () => {
+      event.preventDefault(); // Prevent default scrolling behavior
+      disableHover = true; // Disable hover effects
+    }
+
+    const length = posologySuggestions.length
+
+    if (event.key === 'ArrowDown') {
+      defaultActions()
+      focusedMedicationIndex = (focusedMedicationIndex + 1) % length;
+      scrollToFocusedItem();
+    } else if (event.key === 'ArrowUp') {
+      defaultActions()
+      focusedMedicationIndex = (focusedMedicationIndex - 1 + length) % length;
+      scrollToFocusedItem();
+    } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
+      event.preventDefault();
+      disableHover = false;
+      dosage = (dosage + ' ' + posologySuggestions[focusedMedicationIndex]).replace(/ {2,}/g, ' ')
+    }
+  }
+
+  const scrollToFocusedItem = (): void => {
+    if (focusedMedicationIndex >= 0 && resultRefs[focusedMedicationIndex]) {
+      resultRefs[focusedMedicationIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+  }
+
+  const handleMouseMove = () => {
+    disableHover = false; // Re-enable hover on mouse movement
+  }
+
+  const handleOutsideClick = () => {
+    posologySuggestions = []
+  }
+
 </script>
 
 <div class="addMedicationModal">
     <div class="addMedicationModal__content">
-        <form id="prescriptionForm" class='addMedicationForm' onsubmit={(e) => handleSubmit(e)}>
+        <form id="prescriptionForm" class='addMedicationForm' onsubmit={(e) => handleSubmit(e)} autocomplete="off">
             <div class=' addMedicationForm__header'>
                 <h3>{modalTitle}</h3>
                 <button class=' addMedicationForm__header__closeIcn' onclick={() =>handleClose()}>
                     <CloseIcn/>
                 </button>
             </div>
-            <div class=' addMedicationForm__body'>
+            <div class=' addMedicationForm__body'
+                 onkeydown={handleKeyDown}
+                 role="listbox"
+                 tabindex="0"
+                 aria-activedescendant={focusedMedicationIndex >= 0 ? `posology-${focusedMedicationIndex}` : undefined}
+            >
                 <div class=' addMedicationForm__body__content'>
                     <div class=' addMedicationForm__body__content__inputs'>
                         <Input label='Nom groupe DCI' value={medicationTitle} required
                                disabled
                                id='drugName'/>
-                        <Input label='Posologie' id='dosage' bind:value={dosage} required
-                               errorMessage={errors.dosage?.validationError}/>
-                        <div class='prescribeMedications__dropdown'>
-                            {#each posologySuggestions as posology}
-                                <div>{posology}</div>
-                            {/each}
+                        <div class="dosageInput">
+                            <Input label='Posologie' id='dosage' bind:value={dosage} required
+                                   errorMessage={errors.dosage?.validationError}/>
+                            {#if posologySuggestions.length !== 0}
+                                <ul class='dosageInput__dropdown'
+                                    onmousemove={handleMouseMove}
+                                    use:clickOutside={handleOutsideClick}
+                                >
+                                    {#each posologySuggestions as posology, index}
+                                        <li
+                                                id={`posology-${index}`}
+                                                class:disableHover
+                                                class={focusedMedicationIndex === index ? 'focused' : ''}
+                                        >
+                                            <button onclick={ (e) => {
+                                              e.preventDefault()
+                                              dosage = (dosage + ' ' + posologySuggestions[index]).replace(/ {2,}/g, ' ')
+                                                posologySuggestions = []
+                                            }}>
+                                                {posology}
+                                            </button>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
                         </div>
 
                         <div class=' addMedicationForm__body__content__inputs__group'>
@@ -572,6 +556,52 @@
       background: #FFF;
     }
 
+  }
+
+  .dosageInput {
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    &__dropdown {
+      position: absolute;
+      top: calc(100% + 2px);
+
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 5px;
+
+      background-color: #Fff;
+      border: 1px solid app.$burgundy-900;
+      border-radius: 6px;
+      box-shadow: 0px 9px 28px 0px rgba(0, 0, 0, 0.05), 0px 6px 16px 0px rgba(0, 0, 0, 0.08), 0px 3px 6px 0px rgba(0, 0, 0, 0.12);
+
+      li {
+        width: 100%;
+        border-radius: 4px;
+        background: none;
+
+        &.disableHover:hover {
+          background: none;
+        }
+
+        &:hover, &.focused, &.disableHover.focused:hover {
+          background: app.$gray-300;
+        }
+
+        button {
+          width: 100%;
+          cursor: pointer;
+          padding: 8px;
+          background: none;
+          text-align: left;
+        }
+      }
+    }
   }
 
   @keyframes zoom {

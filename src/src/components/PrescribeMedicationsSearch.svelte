@@ -3,7 +3,7 @@
   import type {MedicationType} from '../types/index.svelte';
   import MedicationRow from './MedicationRow.svelte';
   import {initialiseSdk, searchMedications} from "../../lib/cardinal";
-  import {onMount} from "svelte";
+  import {onDestroy, onMount} from "svelte";
   import {Amp, AmpStatus, DmppCodeType, type PaginatedListIterator} from "@icure/cardinal-be-sam";
   import InfiniteScroll from "./InfiniteScroll.svelte";
 
@@ -18,14 +18,20 @@
     focusedMedicationIndex = 0;
   });
 
+  onDestroy(() => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("mousemove", handleMouseMove);
+  });
+
   let searchQuery: string | undefined = $state();
   let dropdownDisplayed: boolean = $derived(!!searchQuery);
   let displayedMedications: PaginatedListIterator<Amp> | undefined
   let pages: MedicationType[] = $state([]);
   let newPages: MedicationType[][] = $state([]);
-  let {deliveryEnvironment, handleAddPrescription}: {
+  let {deliveryEnvironment, handleAddPrescription, isMedicationPrescriptionModalOpen}: {
     deliveryEnvironment: string,
     handleAddPrescription: (medication: MedicationType) => void
+    isMedicationPrescriptionModalOpen: boolean
   } = $props()
 
   async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
@@ -84,10 +90,12 @@
   const totalPagesLength = $derived(pages.length)
 
   function handleKeyDown(event: KeyboardEvent): void {
+
+    if (isMedicationPrescriptionModalOpen) return;
+
     const defaultActions = () => {
       event.preventDefault(); // Prevent default scrolling behavior
       disableHover = true; // Disable hover effects
-      // setTimeout(() => (disableHover = false), 200); // Re-enable hover after a short delay
     }
 
     if (event.key === 'ArrowDown') {
@@ -111,7 +119,7 @@
   }
 
   function handleMouseMove() {
-    disableHover = false; // Re-enable hover on mouse movement
+    if (!isMedicationPrescriptionModalOpen) disableHover = false; // Re-enable hover on mouse movement
   }
 </script>
 
