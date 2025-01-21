@@ -37,7 +37,7 @@
         blackTriangle: amp.blackTriangle,
         speciallyRegulated: ampp.speciallyRegulated,
         genericPrescriptionRequired: ampp.genericPrescriptionRequired,
-      }
+      } as MedicationType
     }))
 
     return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])

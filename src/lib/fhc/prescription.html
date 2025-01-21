@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription Layout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            border-bottom: 1px solid #000;
+        }
+        .options {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .prescription-section {
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .prescription-item {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #000;
+            margin-bottom: 20px;
+        }
+        .prescription-item div {
+            width: 48%;
+        }
+        .barcode {
+            border: 1px solid #000;
+            width: 12mm;
+            height: 12mm;
+            margin: 5px 0;
+        }
+        .right {
+            margin-left: auto;
+        }
+        .footer {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>PREUVE DE PRESCRIPTION ELECTRONIQUE</h1>
+    <p>Veuillez présenter ce document à votre pharmacien pour scanner le code-barres et vous délivrer les médicaments prescrits.</p>
+</div>
+
+<div class="options">
+    <p><strong>De quelles options disposez-vous pour vous rendre à la pharmacie si vous avez perdu ce document ?</strong></p>
+    <ol>
+        <li>Via Masanté.be - MyHealthViewer - App MesMédicaments ou toute autre App, vous pouvez montrer votre prescription au pharmacien, qui lira le code-barres.</li>
+        <li>Vous pouvez également aller chercher les produits prescrits avec votre eID (ou votre numéro de registre national si votre eID a été lue par le pharmacien qui vous délivre les produits dans les 15 mois précédents).</li>
+    </ol>
+</div>
+
+<div class="prescription-section">
+    <p><strong>Prescripteur :</strong> ${prescriber.lastName} ${prescriber.firstName} ${prescriber.riziv} &nbsp;&nbsp;&nbsp; <strong>Bénéficiaire :</strong> ${patient.lastName} ${patient.firstName} ${patient.ssin}</p>
+    <h3>Contenu de la prescription électronique</h3>
+
+    <div class="prescription-item">
+        <div>
+            <p><strong>Produit 1</strong></p>
+            <p>Date : ${product[0]?.date}</p>
+            <p>Date de fin pour l'exécution :${product[0]?.endDate}</p>
+        </div>
+        <div>
+            <p><div class="right"><strong>RID 1</strong></div></p>
+            <div class="barcode right">${product[0]?.rid}</div>
+        </div>
+    </div>
+
+    <div class="prescription-item">
+        <div>
+            <p><strong>RID 2</strong></p>
+            <div class="barcode">${product[1]?.rid}</div>
+        </div>
+        <div>
+            <p><strong>Produit 2</strong></p>
+            <p>Date :${product[1]?.date}</p>
+            <p>Date de fin pour l'exécution :${product[1]?.endDate}</p>
+        </div>
+    </div>
+
+    <div class="prescription-item">
+        <div>
+            <p><strong>Produit 3</strong></p>
+            <p>Date :${product[2]?.date}</p>
+            <p>Date de fin pour l'exécution :${product[2]?.endDate}</p>
+        </div>
+        <div>
+            <p><div class="right"><strong>RID 3</strong></div></p>
+            <div class="barcode right">${product[2]?.rid}</div>
+        </div>
+    </div>
+
+    <div class="prescription-item">
+        <div>
+            <p><strong>RID 4</strong></p>
+            <div class="barcode">${product[3]?.rid}</div>
+        </div>
+        <div>
+            <p><strong>Produit 4</strong></p>
+            <p>Date :${product[3]?.date}</p>
+            <p>Date de fin pour l'exécution :${product[3]?.endDate}</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
