@@ -1,27 +1,27 @@
 <script lang='ts'>
-	let { label, required, id, disabled, options, defaultValue = $bindable() }: {
-		label: string,
-		id: string,
-		required?: boolean,
-		disabled?: boolean
-		options:  string []
-		defaultValue?:  string
-	} = $props();
+  let {label, required, id, disabled, options, value = $bindable()}: {
+    label: string,
+    id: string,
+    required?: boolean,
+    disabled?: boolean
+    options: { value: string | null, label: string } []
+    value?: string
+  } = $props();
 </script>
 
 <div class='selectInput'>
-	<label class:required for={id}><span>*</span>{label}</label>
-	<select {id} name={id} bind:value={defaultValue} {disabled}>
-		{#each options as option}
-			<option value={option}>
-				{option}
-			</option>
-		{/each}
-	</select>
+    <label class:required for={id}><span>*</span>{label}</label>
+    <select {id} name={id} bind:value={value} {disabled}>
+        {#each options as option}
+            <option value={option.value}>
+                {option.label}
+            </option>
+        {/each}
+    </select>
 </div>
 
 <style lang='scss'>
-	@use '../../../style/app';
+  @use '../../../style/app';
 
   .selectInput {
     width: 100%;

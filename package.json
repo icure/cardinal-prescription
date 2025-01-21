@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.1.0",
-    "@icure/cardinal-be-sam": "./tsPackage"
+    "@icure/be-fhc-api": "^0.5.2",
+    "@icure/cardinal-be-sam": "./tsPackage",
+    "@icure/medication-sdk": "0.0.5",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
