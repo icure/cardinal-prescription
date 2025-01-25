@@ -1,7 +1,7 @@
 <script lang="ts">
     import PrescriptionRow from "./PrescriptionRow.svelte";
     import Button from "./common/Button.svelte";
-  import type {PrescribedMedicationType} from "../types/index.svelte";
+  import type {PrescribedMedicationType } from "../types/index.svelte";
 
   let {
     handleModifyPrescription,

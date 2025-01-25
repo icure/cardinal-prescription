@@ -1,44 +1,73 @@
 <script lang='ts' module>
-  import {type Duration, Medication} from "@icure/be-fhc-api";
+    import {Address, type Duration, Medication} from "@icure/be-fhc-api";
 
-  export type AddMedicationFormType = {
-    dosage?: string | undefined;
-    duration?: number | undefined | Duration;
-    durationTimeUnit?: string;
+    export type PractitionerVisibility = 'open' | 'locked' | 'gmd_prescriber'
+    export type PharmacistVisibility = 'NULL' | 'locked'
 
-    treatmentStartDate?: string | undefined;
-    executableUntil?: string | undefined;
+    export type MedicationType = {
+        ampId?: string;
+        cnk?: string;
+        dmppProductId?: string;
+        id?: string;
+        title?: string;
+        activeIngredient?: string;
+        price?: string;
+        crmLink?: string;
+        patientInformationLeafletLink?: string;
+        blackTriangle?: boolean;
+        speciallyRegulated?: number;
+        genericPrescriptionRequired?: boolean;
+        intendedName?: string;
+    };
 
-    prescriptionsNumber?: number | undefined;
-    periodicityTimeUnit?: string;
-    periodicityDaysNumber?: number | undefined;
-    substitutionAllowed?: boolean;
+    export type PrescribedMedicationType = {
+        rid?: string;
+        medication: Medication,
+        ampId?: string;
+        cnk?: string;
+        dmppProductId?: string;
+        prescriptionsNumber?: number,
+        periodicityTimeUnit?: string,
+        periodicityDaysNumber?: number,
+        substitutionAllowed?: boolean,
+        recipeInstructionForPatient?: string,
+        instructionsForReimbursement?: string,
+        prescriberVisibility?: PractitionerVisibility,
+        pharmacistVisibility?: PharmacistVisibility,
+    }
 
-    recipeInstructionForPatient?: string;
-    instructionsForReimbursement?: string;
-    prescriberVisibility?: string;
-    pharmacyVisibility?: string;
-  }
+    export type AddMedicationFormType = {
+        dosage?: string | undefined;
+        duration?: number | undefined | Duration;
+        durationTimeUnit?: string;
 
-  export type MedicationType = Medication & AddMedicationFormType & {
-    ampId?: string;
-    cnk?: string;
-    dmppProductId?: string;
-    id?: string;
-    title?: string;
-    activeIngredient?: string;
-    price?: string;
-    crmLink?: string;
-    patientInformationLeafletLink?: string;
-    blackTriangle?: boolean;
-    speciallyRegulated?: number;
-    genericPrescriptionRequired?: boolean;
-    intendedName?: string;
-  };
+        treatmentStartDate?: string | undefined;
+        executableUntil?: string | undefined;
 
-  export type PrescribedMedicationType = {
-    medication: Medication,
-    ampId: string,
-  }
+        prescriptionsNumber?: number | undefined;
+        periodicityTimeUnit?: string;
+        periodicityDaysNumber?: number | undefined;
+        substitutionAllowed?: boolean;
+
+        recipeInstructionForPatient?: string;
+        instructionsForReimbursement?: string;
+        prescriberVisibility?: PractitionerVisibility;
+        pharmacistVisibility?: PharmacistVisibility;
+    }
+
+    export interface Prescriber {
+        lastName: string;
+        firstName: string;
+        ssin: string;
+        nihii: string;
+        addresses: Address[];
+    }
+
+    export interface Patient {
+        lastName: string;
+        firstName: string;
+        ssin: string;
+        dateOfBirth:number;
+    }
 
 </script>

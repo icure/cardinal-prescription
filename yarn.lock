@@ -274,7 +274,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@icure/be-fhc-api@npm:^0.5.2":
+"@icure/be-fhc-api@npm:^0.5.4":
   version: 0.5.4
   resolution: "@icure/be-fhc-api@npm:0.5.4"
   dependencies:
@@ -729,11 +729,12 @@ __metadata:
   resolution: "cardinal-prescription@workspace:."
   dependencies:
     "@fontsource-variable/inter": "npm:^5.1.0"
-    "@icure/be-fhc-api": "npm:^0.5.2"
+    "@icure/be-fhc-api": "npm:^0.5.4"
     "@icure/cardinal-be-sam": ./tsPackage
     "@icure/medication-sdk": "npm:0.0.5"
     "@sveltejs/vite-plugin-svelte": "npm:^5.0.0"
     "@tsconfig/svelte": "npm:^5.0.4"
+    jsbarcode: "npm:^3.11.6"
     sass-embedded: "npm:^1.81.0"
     svelte: "npm:^5.2.7"
     svelte-check: "npm:^4.1.0"
@@ -1183,6 +1184,13 @@ __metadata:
     "@pkgjs/parseargs":
       optional: true
   checksum: 10c0/6acc10d139eaefdbe04d2f679e6191b3abf073f111edf10b1de5302c97ec93fffeb2fdd8681ed17f16268aa9dd4f8c588ed9d1d3bffbbfa6e8bf897cbb3149b9
+  languageName: node
+  linkType: hard
+
+"jsbarcode@npm:^3.11.6":
+  version: 3.11.6
+  resolution: "jsbarcode@npm:3.11.6"
+  checksum: 10c0/5603ddaa7f0a65b710af95e29105400d99e4c67655899399ac46965eeb7fef83a8e9378eee4eb27f778fd563917015953261c0f271592f2c705fcc2751754e4d
   languageName: node
   linkType: hard
 

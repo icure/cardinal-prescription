@@ -1,21 +1,49 @@
 <script lang='ts'>
-  let {label, required, id, value = $bindable(), disabled, type = 'text', min, max, errorMessage}: {
-    label: string,
-    id: string,
-    required?: boolean,
-    value?: string | number | Date
-    disabled?: boolean
-    type?: 'text' | 'number' | 'date'
-    min?: number
-    max?: number
-    errorMessage?: string
-  } = $props();
+    import {onMount} from "svelte";
+
+    let {
+        accept,
+        label,
+        required,
+        id,
+        value = $bindable(),
+        disabled,
+        autofocus,
+        onchange,
+        type = 'text',
+        min,
+        max,
+        errorMessage
+    }: {
+        label: string
+        id: string
+        required?: boolean
+        autofocus?: boolean
+        value?: string | number | Date
+        disabled?: boolean
+        type?: 'text' | 'number' | 'date' | 'password' | 'file'
+        min?: number
+        max?: number
+        accept?: string
+        errorMessage?: string
+        onchange?: (event: Event & { currentTarget: EventTarget & HTMLInputElement }) => void
+    } = $props();
+
+    let elm: HTMLInputElement;
+
+    if (!!autofocus) {
+        onMount(() => {
+            elm.focus();
+        });
+    }
+
 </script>
 
 <div class='inputWrapper'>
     <label class:required for={id}><span>*</span>{label}</label>
-    <input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:value={value}
-           {disabled} {min} {max}/>
+    <input class:disabled class:errorMessage {id} name={id} placeholder={label} {type} bind:this={elm}
+           bind:value={value}
+           {disabled} {min} {max} {onchange} {accept}/>
     {#if !!errorMessage}
         <p class='inputWrapper__error'>{errorMessage}</p>
     {/if}
@@ -76,6 +104,19 @@
       font-weight: 400;
       line-height: 22px; /* 169.231% */
 
+      &::file-selector-button {
+        border-radius: 0;
+        height: 100%;
+        cursor: pointer;
+        background-color: white;
+        border:none;
+        border-right: 1px solid rgba(0, 0, 0, 0.16);
+        box-shadow: none;
+        margin-left: 0;
+        margin-right: 16px;
+        padding: e0 12px 0 0;
+        transition: background-color 200ms;
+      }
 
       &::placeholder {
         color: app.$gray-600;

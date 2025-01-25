@@ -1,162 +1,225 @@
 <script lang="ts">
-  import '@fontsource-variable/inter';
-  import PrescribeMedicationsSearch from "./src/components/PrescribeMedicationsSearch.svelte";
-  import MedicationPrescriptionModal from "./src/components/MedicationPrescriptionModal.svelte";
-  import Prescriptions from "./src/components/Prescriptions.svelte";
-  import {onMount} from "svelte";
-  import {getSamVersion, initialiseSdk} from "./lib/cardinal";
-  import {MedicationType} from "@icure/be-fhc-api";
-  import type {PrescribedMedicationType} from "./src/types/index.svelte";
+    import '@fontsource-variable/inter';
+    import PrescribeMedicationsSearch from "./src/components/PrescribeMedicationsSearch.svelte";
+    import MedicationPrescriptionModal from "./src/components/MedicationPrescriptionModal.svelte";
+    import Prescriptions from "./src/components/Prescriptions.svelte";
+    import {onMount} from "svelte";
+    import {getSamVersion, initialiseSdk} from "./lib/cardinal";
+    import type {PrescribedMedicationType, MedicationType} from "./src/types/index.svelte";
+    import CertificateUpload from "./src/components/CertificateUpload.svelte";
+    import {
+        loadAndDecryptCertificate,
+        loadCertificateInformation,
+        openCertificatesDatabase,
+        sendRecipe,
+    } from "./lib/fhc";
+    import Button from "./src/components/common/Button.svelte";
+    import Input from "./src/components/common/Input.svelte";
+    import {Prescription} from "@icure/be-fhc-api/model/Prescription";
 
-  let sdk: any;
-  let samVersion: string | undefined = $state()
+    let sdk: any;
+    let samVersion: string | undefined = $state()
+    let certificateUploaded: boolean = $state(false)
+    let certificateValid: boolean | undefined = $state(undefined)
+    let uiReady: boolean = $state(false)
+    let passphrase: string = $state('')
 
-  onMount(async () => {
-    sdk = await initialiseSdk()
-  });
-
-  $effect(() => {
-    setTimeout(() => {
-      getSamVersion(sdk).then(async (res) => {
-        if (res?.version) samVersion = res.version
-      })
-    }, 100)
-  });
-
-
-  let showMedicationPrescriptionModal = $state(false);
-  let medicationToPrescribe: MedicationType | undefined = $state()
-
-  const handleAddPrescription = (medication: MedicationType) => {
-    showMedicationPrescriptionModal = true
-    medicationToPrescribe = medication;
-  }
-
-  let prescribedMedicationToModify: PrescribedMedicationType | undefined = $state()
-
-  const handleModifyPrescription = (prescribedMedication: PrescribedMedicationType) => {
-    showMedicationPrescriptionModal = true
-    prescribedMedicationToModify = prescribedMedication;
-  }
-
-  const handleDeletePrescription = (prescribedMedication: PrescribedMedicationType) => {
-    prescribedMedications = prescribedMedications.filter(
-      (item) => item.ampId !== prescribedMedication.ampId
-    );
-  }
-
-  const patient = {
-    firstName: 'firstName',
-    lastName: 'lastName',
-    gender: 'male',
-    ssin: "00000000000",
-    dateOfBirth: 19700101
-  }
-  const hcp = {
-    firstName: 'firstName',
-    lastName: 'lastName',
-    gender: 'male',
-    ssin: "00000000000",
-    nihii: "00000000000"
-  }
-  const vendor = {
-    vendorEmail: "support@test.be",
-    vendorName: "vendorName",
-    vendorPhone: "+3200000000",
-  }
-  const usedPackage = {
-    packageName: "test[test/1.0]-freehealth-connector",
-    packageVersion: "1.0]-freehealth-connector",
-  }
-
-  let prescribedMedications: PrescribedMedicationType[] = $state([])
-
-  const prescriptionData = $derived(
-    {
-      expirationDate: 20250113,
-      vision: "",
-      visionOthers: "open",
-      feedback: true,
-      lang: "fr",
-      medications: [...prescribedMedications],
-      patient: {
-        firstName: patient.firstName,
-        lastName: patient.lastName,
-        gender: patient.gender,
-        ssin: patient.ssin,
-        dateOfBirth: patient.dateOfBirth
-      },
-      samVersion: samVersion,
-      packageName: usedPackage.packageName,
-      packageVersion: usedPackage.packageVersion,
-      vendorEmail: vendor.vendorEmail,
-      vendorName: vendor.vendorName,
-      vendorPhone: vendor.vendorPhone,
-      hcp: {
-        firstName: hcp.firstName,
-        lastName: hcp.lastName,
-        nihii: hcp.nihii,
-        ssin: hcp.ssin
-      },
+    const patient = {
+        firstName: 'Antoine',
+        lastName: 'Duchâteau',
+        gender: 'male',
+        ssin: "74010414733",
+        dateOfBirth: 19740104
     }
-  )
 
-  const handleSendPrescription = () => {
-    console.log(prescriptionData)
-  }
-  const handlePrintPrescription = () => {
-    console.log(prescriptionData)
-  }
+    const hcp = {
+        firstName: 'Fabien',
+        lastName: 'Zimer',
+        gender: 'male',
+        ssin: "84100212104",
+        nihii: "10104133000",
+        addresses: [
+            {
+                street: 'Rue de la Loi',
+                number: '16',
+                postalCode: '1000',
+                city: 'Bruxelles',
+                country: 'Belgique'
+            }
+        ]
+    }
+
+    onMount(async () => {
+        sdk = await initialiseSdk()
+        const db = await openCertificatesDatabase()
+        try {
+            await loadCertificateInformation(db, hcp.ssin)
+            certificateUploaded = true
+        } catch (e) {
+            certificateUploaded = false
+        }
+        uiReady = true
+    });
+
+    $effect(() => {
+        setTimeout(() => {
+            getSamVersion(sdk).then(async (res) => {
+                if (res?.version) samVersion = res.version
+            })
+        }, 100)
+    });
+
+    $effect(() => {
+        if (certificateUploaded && passphrase) {
+            loadAndDecryptCertificate(passphrase, hcp.ssin).then((res) => {
+                certificateValid = true
+            }).catch(() => {
+                certificateValid = false
+            })
+        }
+    });
+
+    let showMedicationPrescriptionModal = $state(false);
+    let medicationToPrescribe: MedicationType | undefined = $state()
+
+    const handleAddPrescription = (medication: MedicationType) => {
+        showMedicationPrescriptionModal = true
+        medicationToPrescribe = medication;
+    }
+
+    let prescribedMedicationToModify: PrescribedMedicationType | undefined = $state()
+
+    const handleModifyPrescription = (prescribedMedication: PrescribedMedicationType) => {
+        showMedicationPrescriptionModal = true
+        prescribedMedicationToModify = prescribedMedication;
+    }
+
+    const handleDeletePrescription = (prescribedMedication: PrescribedMedicationType) => {
+        prescribedMedications = prescribedMedications.filter(
+            (item) => item.ampId !== prescribedMedication.ampId
+        );
+    }
+
+    let prescribedMedications: PrescribedMedicationType[] = $state([])
+    let cache: Record<string, string> = $state({})
+
+    const handleSendPrescription = () => {
+        prescribedMedications.map((med, idx) => {
+            sendRecipe(
+                samVersion!,
+                hcp,
+                patient,
+                med,
+                {
+                    get: (key: string) => Promise.resolve(cache[key]),
+                    put: (key: string, value: string) => Promise.resolve(cache[key] = value)
+                },
+                passphrase
+            ).then((res: Prescription[]) => {
+                prescribedMedications = prescribedMedications.map((item, index) => index === idx ? {
+                    ...item,
+                    rid: res[0]?.rid
+                } : item)
+            })
+        })
+    }
+    const handlePrintPrescription = () => {
+    }
 </script>
 
 <main>
-    <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}
-                                isMedicationPrescriptionModalOpen={showMedicationPrescriptionModal}/>
+    {#if !uiReady}
+        <p>Loading...</p>
+    {:else}
+        {#if certificateUploaded}
+            <div>
+                <div class="line">
+                    <Input id="passphrase" type="password" label="Password" bind:value={passphrase}/>
+                    <Button title="Upload&nbsp;new" view="outlined" handleClick={() => certificateUploaded = false}/>
+                </div>
+                <div>
+                    {#if certificateValid === false}
+                        <p class="error">Passphrase is invalid</p>
+                    {:else if certificateValid === true}
+                        <p class="success">Passphrase is valid</p>
+                    {/if}
+                </div>
+            </div>
+        {:else}
+            <CertificateUpload handleSave={(id, password) =>{
+                certificateUploaded = true;
+                passphrase = password;
+            }}/>
+        {/if}
+        <p>Sam version: {samVersion}</p>
+        <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}
+                                    isMedicationPrescriptionModalOpen={showMedicationPrescriptionModal}/>
 
-    {#if !!medicationToPrescribe && showMedicationPrescriptionModal}
-        <MedicationPrescriptionModal
-                modalTitle="Créer la prescription"
-                {medicationToPrescribe}
-                handleSave={({medication, ampId}) =>{
+        {#if !!medicationToPrescribe && showMedicationPrescriptionModal}
+            <MedicationPrescriptionModal
+                    modalTitle="Créer la prescription"
+                    {medicationToPrescribe}
+                    handleSave={({medication, ampId}) =>{
                     prescribedMedications.push({medication, ampId})
                     medicationToPrescribe = undefined
                 }
                     }
-                handleClose={()=> {
+                    handleClose={()=> {
                     showMedicationPrescriptionModal = false
                     medicationToPrescribe = undefined
                 }}
-        />
-    {/if}
+            />
+        {/if}
 
-    {#if !!prescribedMedicationToModify && showMedicationPrescriptionModal}
-        <MedicationPrescriptionModal
-                modalTitle="Modifier la prescription"
-                medicationToPrescribe={{...prescribedMedicationToModify.medication, ampId: prescribedMedicationToModify.ampId}}
-                handleSave={({medication, ampId}) =>{
+        {#if !!prescribedMedicationToModify && showMedicationPrescriptionModal}
+            <MedicationPrescriptionModal
+                    modalTitle="Modifier la prescription"
+                    medicationToPrescribe={{...prescribedMedicationToModify.medication, ampId: prescribedMedicationToModify.ampId}}
+                    handleSave={({medication, ampId}) =>{
                    prescribedMedications = prescribedMedications.map((item) => item.ampId === ampId ? {medication, ampId} : item);
                    prescribedMedicationToModify = undefined
                 }}
-                handleClose={()=> {
+                    handleClose={()=> {
                     showMedicationPrescriptionModal = false
                     prescribedMedicationToModify = undefined
                 }}
-        />
+            />
+        {/if}
+        {#if prescribedMedications.length !== 0}
+            <Prescriptions {handleDeletePrescription} {handleModifyPrescription}
+                           {prescribedMedications} {handleSendPrescription} {handlePrintPrescription}/>
+        {/if}
     {/if}
-    {#if prescribedMedications.length !== 0}
-        <Prescriptions {handleDeletePrescription} {handleModifyPrescription}
-                       {prescribedMedications} {handleSendPrescription} {handlePrintPrescription}/>
-    {/if}
+
 </main>
 
 <style>
-  :global(html) {
-    font-family: 'Inter Variable', sans-serif;
-  }
+    :global(html) {
+        font-family: 'Inter Variable', sans-serif;
+    }
 
-  main {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
+    main {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .line {
+        display: flex;
+        width: 700px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .error {
+        font-size: 10px;
+        color: red;
+    }
+
+    .success {
+        font-size: 10px;
+        color: green;
+    }
 </style>

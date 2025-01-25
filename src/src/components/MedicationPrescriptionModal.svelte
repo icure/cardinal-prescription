@@ -1,277 +1,297 @@
 <script lang="ts">
-  import {CloseIcn} from '../icons/index.svelte';
-  import Button from './common/Button.svelte';
-  import Input from './common/Input.svelte';
-  import Switch from './common/Switch.svelte';
-  import Select from './common/Select.svelte';
-  import Textarea from './common/Textarea.svelte';
-  import type {AddMedicationFormType, MedicationType, PrescribedMedicationType} from "../types/index.svelte";
-  import {Duration, Medication, MedicationRenewal} from '@icure/be-fhc-api'
-  import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
-  import {Code} from "../utils/code-utils";
-  import {completePosology} from "@icure/medication-sdk";
-  import RadioButton from "./common/RadioButton.svelte";
-  import {v4 as uuid} from 'uuid'
-  import {onDestroy, onMount} from "svelte";
-  import {clickOutside} from '../utils/clickOutside'
-  import {
-    durationTimeUnits,
-    periodicityTimeUnits,
-    pharmacyVisibilityOptions,
-    prescriberVisibilityOptions,
-    reimbursementOptions
-  } from '../helpers/index.svelte'
+    import {CloseIcn} from '../icons/index.svelte';
+    import Button from './common/Button.svelte';
+    import Input from './common/Input.svelte';
+    import Switch from './common/Switch.svelte';
+    import Select from './common/Select.svelte';
+    import Textarea from './common/Textarea.svelte';
+    import type {
+        AddMedicationFormType,
+        MedicationType, PharmacistVisibility, PractitionerVisibility,
+        PrescribedMedicationType
+    } from "../types/index.svelte";
+    import {Duration, Medication} from '@icure/be-fhc-api'
+    import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
+    import {Code} from "../utils/code-utils";
+    import {completePosology} from "@icure/medication-sdk";
+    import RadioButton from "./common/RadioButton.svelte";
+    import {v4 as uuid} from 'uuid'
+    import {onDestroy, onMount} from "svelte";
+    import {clickOutside} from '../utils/clickOutside'
+    import {
+        durationTimeUnits, findCommonSequence,
+        periodicityTimeUnits, type PharmacistVisibilityOption,
+        pharmacistVisibilityOptions, type PrescriberVisibilityOption,
+        practitionerVisibilityOptions,
+        reimbursementOptions
+    } from '../helpers/index.svelte'
 
-  let {medicationToPrescribe, handleClose, handleSave, modalTitle}: {
-    medicationToPrescribe: MedicationType,
-    handleClose: () => void,
-    handleSave: ({}: PrescribedMedicationType) => void
-    modalTitle: string
-  } = $props();
+    let { medicationToPrescribe, prescribedMedication, handleClose, handleSave, modalTitle }: {
+        medicationToPrescribe?: MedicationType,
+        prescribedMedication?: PrescribedMedicationType,
+        handleClose: () => void,
+        handleSave: ({}: PrescribedMedicationType) => void
+        modalTitle: string
+    } = $props();
 
-  const medicationTitle = medicationToPrescribe.title ?? medicationToPrescribe.medicinalProduct?.intendedname;
+    const medicationTitle = medicationToPrescribe?.title ?? prescribedMedication?.medication.medicinalProduct?.intendedname;
 
-  const formatDateForInput = (dateNumber: number) => {
-    const year = Math.floor(dateNumber / 10000);
-    const month = Math.floor((dateNumber % 10000) / 100).toString().padStart(2, '0'); // Zero-pad month
-    const day = (dateNumber % 100).toString().padStart(2, '0'); // Zero-pad day
+    const formatDateForInput = (dateNumber: number) => {
+        const year = Math.floor(dateNumber / 10000);
+        const month = Math.floor((dateNumber % 10000) / 100).toString().padStart(2, '0'); // Zero-pad month
+        const day = (dateNumber % 100).toString().padStart(2, '0'); // Zero-pad day
 
-    return `${year}-${month}-${day}`; // Format as YYYY-MM-DD
-  }
-
-  const getTreatmentStartDate = () => {
-    if (medicationToPrescribe.beginMoment) {
-      return formatDateForInput(medicationToPrescribe.beginMoment)
-    } else {
-      return new Date().toISOString().split('T')[0]
+        return `${year}-${month}-${day}`; // Format as YYYY-MM-DD
     }
-  }
-  const getExecutableUntilDate = () => {
-    if (medicationToPrescribe.endMoment) {
-      return formatDateForInput(medicationToPrescribe.endMoment);
-    } else {
-      const startDay = new Date();
-      const nextYear = new Date(startDay);
-      nextYear.setFullYear(startDay.getFullYear() + 1);
-      return nextYear.toISOString().split('T')[0];
-    }
-  }
 
-  // Compulsory fields
-  let dosage: string | undefined = $state(medicationToPrescribe.instructionForPatient ?? undefined);
-  let duration: number | undefined = $state(medicationToPrescribe.duration?.value ?? 1);
-  let durationTimeUnit: string = $state(medicationToPrescribe.durationTimeUnit ?? durationTimeUnits[0].value);
-
-  let treatmentStartDate: string | undefined = $state(getTreatmentStartDate());
-  let executableUntil: string | undefined = $state(getExecutableUntilDate());
-
-  let prescriptionsNumber: number | undefined = $state(medicationToPrescribe.prescriptionsNumber ?? 1);
-  let periodicityTimeUnit: string = $state(medicationToPrescribe.periodicityTimeUnit ?? periodicityTimeUnits[0].value);
-  let periodicityDaysNumber: number | undefined = $state(medicationToPrescribe.periodicityDaysNumber ?? undefined);
-
-  let substitutionAllowed: boolean = $state(medicationToPrescribe.substitutionAllowed ?? false)
-
-  // Extra fields
-  let showExtraFields = $state(false);
-  let recipeInstructionForPatient: string | undefined = $state(medicationToPrescribe.recipeInstructionForPatient ?? undefined);
-  let instructionsForReimbursement: string | undefined = $state(medicationToPrescribe.instructionsForReimbursement ?? undefined);
-  let prescriberVisibility: string = $state(medicationToPrescribe.prescriberVisibility ?? prescriberVisibilityOptions[0].value);
-  let pharmacyVisibility: string = $state(medicationToPrescribe.pharmacyVisibility ?? pharmacyVisibilityOptions[0].value);
-
-  let inputsToValidate: string[] = $state([]);
-  let posologySuggestions: string[] = $state([]);
-
-  $effect(() => {
-    inputsToValidate = [
-      'dosage',
-      'duration',
-      'durationTimeUnit',
-      'treatmentStartDate',
-      'executableUntil',
-      'prescriptionsNumber',
-      'substitutionAllowed',
-      (prescriptionsNumber && prescriptionsNumber > 1) ? 'periodicityTimeUnit' : null,
-      (periodicityTimeUnit && periodicityTimeUnit === 'x nombre de jours') ? 'periodicityDaysNumber' : null
-    ].filter((x): x is string => !!x)
-  })
-
-  $effect(() => {
-    const dosageWhenCalled = dosage;
-    setTimeout(() => {
-      if (dosageWhenCalled && dosageWhenCalled === dosage) {
-        posologySuggestions = completePosology(dosageWhenCalled)
-      }
-    }, 100)
-  });
-
-  const errorMessages = {
-    isRequired: 'Ce champ est obligatoire.'
-  }
-
-  let errors: { [inputName: string]: { validationError: string | undefined } } = $state({});
-
-  const isFormValid = (): boolean => {
-    return !Object.keys(errors).some((inputName) => errors[inputName].validationError
-    );
-  }
-
-  const validateForm = (data: { [inputName: string]: any }): void => {
-    const setError = (inputName: string, isValid: boolean): void => {
-      errors = {
-        ...errors,
-        [inputName]: {
-          validationError: !isValid ? errorMessages.isRequired : undefined
+    const getTreatmentStartDate = () => {
+        if (prescribedMedication?.medication.beginMoment) {
+            return formatDateForInput(prescribedMedication?.medication.beginMoment)
+        } else {
+            return new Date().toISOString().split('T')[0]
         }
-      }
     }
-    const isRequiredFieldValid = (value: string | number) => value != null && value !== '';
-    inputsToValidate.forEach((input) => setError(input, isRequiredFieldValid(data[input])))
-  }
-
-  const handleSubmit = (e: SubmitEvent): void => {
-    e.preventDefault();
-
-    const data: AddMedicationFormType = {
-      dosage,
-      duration,
-      durationTimeUnit,
-      treatmentStartDate,
-      prescriptionsNumber,
-      executableUntil,
-      periodicityTimeUnit,
-      periodicityDaysNumber,
-      substitutionAllowed,
-      recipeInstructionForPatient,
-      instructionsForReimbursement,
-      prescriberVisibility,
-      pharmacyVisibility,
-    };
-
-    validateForm(data);
-
-    if (isFormValid()) {
-      const getMedicinalProduct = () => {
-        if (medicationToPrescribe.medicinalProduct) {
-          return medicationToPrescribe.medicinalProduct
-        } else if (!medicationToPrescribe.medicinalProduct && medicationToPrescribe.cnk) {
-          return new Medicinalproduct({
-            samId: medicationToPrescribe.dmppProductId,
-            intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe.cnk)],
-            intendedname: medicationToPrescribe.intendedName
-          })
+    const getExecutableUntilDate = () => {
+        if (prescribedMedication?.medication.endMoment) {
+            return formatDateForInput(prescribedMedication?.medication.endMoment);
+        } else {
+            const startDay = new Date();
+            const nextYear = new Date(startDay);
+            nextYear.setFullYear(startDay.getFullYear() + 1);
+            return nextYear.toISOString().split('T')[0];
         }
-      }
-      const getDurationInDays = (timeUnit: string, value: number) => {
-        if (timeUnit === "jour") {
-          return value
-        } else if (timeUnit === "semaine") {
-          return value * 7
+    }
+
+    // Compulsory fields
+    let dosage: string | undefined = $state(prescribedMedication?.medication.instructionForPatient ?? undefined);
+    let dosageFromSuggestion: string | undefined = $state(undefined);
+    let duration: number | undefined = $state(prescribedMedication?.medication.duration?.value ?? 1);
+    let durationTimeUnit: string = $state(prescribedMedication?.medication.duration?.unit?.code ?? durationTimeUnits[0].value);
+
+    let treatmentStartDate: string | undefined = $state(getTreatmentStartDate());
+    let executableUntil: string | undefined = $state(getExecutableUntilDate());
+
+    let prescriptionsNumber: number | undefined = $state(prescribedMedication?.prescriptionsNumber ?? 1);
+    let periodicityTimeUnit: string = $state(prescribedMedication?.periodicityTimeUnit ?? periodicityTimeUnits[0].value);
+    let periodicityDaysNumber: number | undefined = $state(prescribedMedication?.periodicityDaysNumber ?? undefined);
+
+    let substitutionAllowed: boolean = $state(prescribedMedication?.substitutionAllowed ?? false)
+
+    // Extra fields
+    let showExtraFields = $state(false);
+    let recipeInstructionForPatient: string | undefined = $state(prescribedMedication?.medication.recipeInstructionForPatient ?? undefined);
+    let instructionsForReimbursement: string | undefined = $state(prescribedMedication?.instructionsForReimbursement ?? undefined);
+    let practitionerVisibility: PractitionerVisibility = $state(prescribedMedication?.prescriberVisibility ?? practitionerVisibilityOptions[0]?.value);
+    let pharmacistVisibility: PharmacistVisibility = $state(prescribedMedication?.pharmacistVisibility ?? pharmacistVisibilityOptions[0]?.value);
+
+    let inputsToValidate: string[] = $state([]);
+    let posologySuggestions: string[] = $state([]);
+
+    $effect(() => {
+        inputsToValidate = [
+            'dosage',
+            'duration',
+            'durationTimeUnit',
+            'treatmentStartDate',
+            'executableUntil',
+            'prescriptionsNumber',
+            'substitutionAllowed',
+            (prescriptionsNumber && prescriptionsNumber > 1) ? 'periodicityTimeUnit' : null,
+            (periodicityTimeUnit && periodicityTimeUnit === 'x nombre de jours') ? 'periodicityDaysNumber' : null
+        ].filter((x): x is string => !!x)
+    })
+
+    $effect(() => {
+        const dosageWhenCalled = dosage;
+        setTimeout(() => {
+            if (dosageWhenCalled && dosageWhenCalled === dosage && dosageWhenCalled != dosageFromSuggestion) {
+                posologySuggestions = completePosology(dosageWhenCalled)
+            }
+        }, 100)
+    });
+
+    const errorMessages = {
+        isRequired: 'Ce champ est obligatoire.'
+    }
+
+    let errors: { [inputName: string]: { validationError: string | undefined } } = $state({});
+
+    const isFormValid = (): boolean => {
+        return !Object.keys(errors).some((inputName) => errors[inputName].validationError
+        );
+    }
+
+    const validateForm = (data: { [inputName: string]: any }): void => {
+        const setError = (inputName: string, isValid: boolean): void => {
+            errors = {
+                ...errors,
+                [inputName]: {
+                    validationError: !isValid ? errorMessages.isRequired : undefined
+                }
+            }
         }
-      }
-      const medication = new Medication({
-        medicinalProduct: getMedicinalProduct(),
-        beginMoment: parseInt((data.treatmentStartDate as string).replace(/-/g, '')),
-        endMoment: parseInt((data.executableUntil as string).replace(/-/g, '')),
-
-        duration: new Duration({
-          unit: Code.from("CD-TIMEUNIT", "D"),
-          value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
-        }),
-
-        // not sure about this field
-        renewal: new MedicationRenewal({
-          decimal: prescriptionsNumber,
-          duration: new Duration({unit: Code.from("CD-TIMEUNIT", "D"), value: data.periodicityDaysNumber})
-        }),
-
-        instructionForPatient: data.dosage,
-        recipeInstructionForPatient: data.recipeInstructionForPatient,
-        instructionsForReimbursement: data.instructionsForReimbursement,
-        substitutionAllowed: data.substitutionAllowed
-      })
-
-      handleSave({medication, ampId: medicationToPrescribe.ampId ?? uuid()})
-      handleClose()
-    } else {
-      console.log('Invalid Form');
-    }
-  }
-
-
-  let focusedMedicationIndex = $state(0);
-  let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
-  let disableHover = $state(false);
-
-  onMount(async () => {
-    focusedMedicationIndex = 0;
-  });
-
-  onDestroy(() => {
-    window.removeEventListener("keydown", handleKeyDown);
-    window.removeEventListener("mousemove", handleMouseMove);
-  });
-
-  const handleKeyDown = (event: KeyboardEvent): void => {
-    const defaultActions = () => {
-      event.preventDefault(); // Prevent default scrolling behavior
-      disableHover = true; // Disable hover effects
+        const isRequiredFieldValid = (value: string | number) => value != null && value !== '';
+        inputsToValidate.forEach((input) => setError(input, isRequiredFieldValid(data[input])))
     }
 
-    const length = posologySuggestions.length
+    const handleSubmit = (e: Event): void => {
+        e.preventDefault();
 
-    if (event.key === 'ArrowDown') {
-      defaultActions()
-      focusedMedicationIndex = (focusedMedicationIndex + 1) % length;
-      scrollToFocusedItem();
-    } else if (event.key === 'ArrowUp') {
-      defaultActions()
-      focusedMedicationIndex = (focusedMedicationIndex - 1 + length) % length;
-      scrollToFocusedItem();
-    } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
-      event.preventDefault();
-      disableHover = false;
-      dosage = (dosage + ' ' + posologySuggestions[focusedMedicationIndex]).replace(/ {2,}/g, ' ')
+        const data: AddMedicationFormType = {
+            dosage,
+            duration,
+            durationTimeUnit,
+            treatmentStartDate,
+            prescriptionsNumber,
+            executableUntil,
+            periodicityTimeUnit,
+            periodicityDaysNumber,
+            substitutionAllowed,
+            recipeInstructionForPatient,
+            instructionsForReimbursement,
+            prescriberVisibility: practitionerVisibility,
+            pharmacistVisibility: pharmacistVisibility,
+        };
+
+        validateForm(data);
+
+        if (isFormValid()) {
+            const getDurationInDays = (timeUnit: string, value: number) => {
+                if (timeUnit === "jour") {
+                    return value
+                } else if (timeUnit === "semaine") {
+                    return value * 7
+                }
+            }
+            const medication = prescribedMedication?.medication ?? new Medication({
+                medicinalProduct: new Medicinalproduct({
+                    samId: medicationToPrescribe!.dmppProductId,
+                    intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe!.cnk!)],
+                    intendedname: medicationToPrescribe!.intendedName
+                }),
+                beginMoment: parseInt((data.treatmentStartDate as string).replace(/-/g, '')),
+                endMoment: parseInt((data.executableUntil as string).replace(/-/g, '')),
+
+                duration: new Duration({
+                    unit: Code.from("CD-TIMEUNIT", "D"),
+                    value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
+                }),
+
+                instructionForPatient: data.dosage,
+                recipeInstructionForPatient: data.recipeInstructionForPatient,
+                instructionsForReimbursement: data.instructionsForReimbursement,
+                substitutionAllowed: data.substitutionAllowed
+            })
+
+            handleSave({
+                medication,
+                ampId: medicationToPrescribe?.ampId ?? uuid(),
+                periodicityTimeUnit,
+                periodicityDaysNumber,
+                substitutionAllowed,
+                recipeInstructionForPatient,
+                instructionsForReimbursement,
+                prescriberVisibility: practitionerVisibility,
+                pharmacistVisibility: pharmacistVisibility,
+            })
+            handleClose()
+        } else {
+            console.log('Invalid Form');
+        }
     }
-  }
 
-  const scrollToFocusedItem = (): void => {
-    if (focusedMedicationIndex >= 0 && resultRefs[focusedMedicationIndex]) {
-      resultRefs[focusedMedicationIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+
+    let focusedDosageIndex = $state(-1);
+    let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
+    let disableHover = $state(false);
+
+    onMount(async () => {
+        focusedDosageIndex = -1;
+    });
+
+    onDestroy(() => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("mousemove", handleMouseMove);
+    });
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+        const defaultActions = () => {
+            event.preventDefault(); // Prevent default scrolling behavior
+            disableHover = true; // Disable hover effects
+        }
+
+        const length = posologySuggestions.length
+
+        if (event.key === 'ArrowDown') {
+            defaultActions()
+            focusedDosageIndex = (focusedDosageIndex + 1) % length;
+            scrollToFocusedItem();
+        } else if (event.key === 'ArrowUp') {
+            defaultActions()
+            focusedDosageIndex = (focusedDosageIndex - 1 + length) % length;
+            scrollToFocusedItem();
+        } else if (event.key === 'Enter' && focusedDosageIndex >= 0) {
+            event.preventDefault();
+            disableHover = false;
+            const suggestion = posologySuggestions[focusedDosageIndex]
+
+            if (suggestion) {
+                const common = findCommonSequence(dosage ?? '', suggestion)
+                dosage = (dosage + (common.length ? suggestion.slice(common.length) : ' ' + suggestion)).replace(/ {2,}/g, ' ')
+                dosageFromSuggestion = dosage
+                posologySuggestions = []
+                focusedDosageIndex = -1
+            }
+        } else if (event.key === 'Escape') {
+            if (posologySuggestions.length) {
+                event.preventDefault()
+                event.stopPropagation()
+                posologySuggestions = []
+                focusedDosageIndex = -1
+            }
+        } else if (event.key === 'Enter') {
+            handleSubmit(event)
+        }
     }
-  }
 
-  const handleMouseMove = () => {
-    disableHover = false; // Re-enable hover on mouse movement
-  }
+    const scrollToFocusedItem = (): void => {
+        if (focusedDosageIndex >= 0 && resultRefs[focusedDosageIndex]) {
+            resultRefs[focusedDosageIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+    }
 
-  const handleOutsideClick = () => {
-    posologySuggestions = []
-  }
+    const handleMouseMove = () => {
+        disableHover = false; // Re-enable hover on mouse movement
+    }
+
+    const handleOutsideClick = () => {
+        posologySuggestions = []
+    }
 
 </script>
 
 <div class="addMedicationModal">
     <div class="addMedicationModal__content">
         <form id="prescriptionForm" class='addMedicationForm' onsubmit={(e) => handleSubmit(e)} autocomplete="off">
-            <div class=' addMedicationForm__header'>
+            <div class='addMedicationForm__header'>
                 <h3>{modalTitle}</h3>
-                <button class=' addMedicationForm__header__closeIcn' onclick={() =>handleClose()}>
+                <button class='addMedicationForm__header__closeIcn' onclick={() =>handleClose()}>
                     <CloseIcn/>
                 </button>
             </div>
-            <div class=' addMedicationForm__body'
+            <div class='addMedicationForm__body'
                  onkeydown={handleKeyDown}
                  role="listbox"
                  tabindex="0"
-                 aria-activedescendant={focusedMedicationIndex >= 0 ? `posology-${focusedMedicationIndex}` : undefined}
+                 aria-activedescendant={focusedDosageIndex >= 0 ? `posology-${focusedDosageIndex}` : undefined}
             >
-                <div class=' addMedicationForm__body__content'>
-                    <div class=' addMedicationForm__body__content__inputs'>
+                <div class='addMedicationForm__body__content'>
+                    <div class='addMedicationForm__body__content__inputs'>
                         <Input label='Nom groupe DCI' value={medicationTitle} required
                                disabled
                                id='drugName'/>
                         <div class="dosageInput">
-                            <Input label='Posologie' id='dosage' bind:value={dosage} required
+                            <Input label='Posologie' id='dosage' bind:value={dosage} required autofocus
                                    errorMessage={errors.dosage?.validationError}/>
                             {#if posologySuggestions.length !== 0}
                                 <ul class='dosageInput__dropdown'
@@ -282,7 +302,7 @@
                                         <li
                                                 id={`posology-${index}`}
                                                 class:disableHover
-                                                class={focusedMedicationIndex === index ? 'focused' : ''}
+                                                class={focusedDosageIndex === index ? 'focused' : ''}
                                         >
                                             <button onclick={ (e) => {
                                               e.preventDefault()
@@ -297,14 +317,14 @@
                             {/if}
                         </div>
 
-                        <div class=' addMedicationForm__body__content__inputs__group'>
+                        <div class='addMedicationForm__body__content__inputs__group'>
                             <Input label='Durée (nombre d’unités)' bind:value={duration} required
                                    errorMessage={errors.duration?.validationError}
                                    id='duration' type='number' min={1}/>
                             <Select label='Unité de temps' bind:value={durationTimeUnit} required
                                     id='durationTimeUnit' options={durationTimeUnits}/>
                         </div>
-                        <div class=' addMedicationForm__body__content__inputs__group'>
+                        <div class='addMedicationForm__body__content__inputs__group'>
                             <Input label='Date début du traitement' bind:value={treatmentStartDate} required
                                    errorMessage={errors.treatmentStartDate?.validationError}
                                    id='treatmentStartDate' type='date'/>
@@ -350,34 +370,34 @@
                         </p>
                         <p>
                             <span>Visibilité prescripteur: </span>
-                            <i><span> {prescriberVisibility}</span></i>
+                            <i><span> {practitionerVisibilityOptions.find(o => o.value === practitionerVisibility)?.label}</span></i>
                         </p>
 
                         <p>
                             <span>Visibilité officine:</span>
-                            <i><span> {pharmacyVisibility}</span></i>
+                            <i><span> {pharmacistVisibilityOptions.find(o => o.value === pharmacistVisibility)?.label}</span></i>
                         </p>
 
                         <p></p>
                     </div>
                 {:else}
-                    <div class=' addMedicationForm__body__content'>
-                        <div class=' addMedicationForm__body__content__inputs'>
+                    <div class='addMedicationForm__body__content'>
+                        <div class='addMedicationForm__body__content__inputs'>
 					<Textarea label='Instructions pour le patient' id='recipeInstructionForPatient'
                               bind:value={recipeInstructionForPatient}/>
                             <Select label='Instructions remboursement' id='instructionsForReimbursement'
                                     bind:value={instructionsForReimbursement} options={reimbursementOptions}/>
 
-                            <Select label='Visibilité prescripteur' bind:value={prescriberVisibility}
-                                    id='prescriberVisibility' options={prescriberVisibilityOptions}/>
-                            <Select label='Visibilité officine' bind:value={pharmacyVisibility}
-                                    id='pharmacyVisibility' options={pharmacyVisibilityOptions}/>
+                            <Select label='Visibilité prescripteur' bind:value={practitionerVisibility}
+                                    id='prescriberVisibility' options={practitionerVisibilityOptions}/>
+                            <Select label='Visibilité officine' bind:value={pharmacistVisibility}
+                                    id='pharmacyVisibility' options={pharmacistVisibilityOptions}/>
 
                         </div>
                     </div>
                 {/if}
             </div>
-            <div class=' addMedicationForm__footer'>
+            <div class='addMedicationForm__footer'>
                 <Button title='Cancel' handleClick={() => handleClose() } view='outlined' type='reset'
                         form="prescriptionForm"/>
                 <Button title='Save' view='primary' type='submit' form="prescriptionForm"/>

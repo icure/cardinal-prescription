@@ -1,126 +1,127 @@
 <script lang='ts'>
-  import {SearchIcn} from '../icons/index.svelte';
-  import type {MedicationType} from '../types/index.svelte';
-  import MedicationRow from './MedicationRow.svelte';
-  import {initialiseSdk, searchMedications} from "../../lib/cardinal";
-  import {onDestroy, onMount} from "svelte";
-  import {Amp, AmpStatus, DmppCodeType, type PaginatedListIterator} from "@icure/cardinal-be-sam";
-  import InfiniteScroll from "./InfiniteScroll.svelte";
+    import {SearchIcn} from '../icons/index.svelte';
+    import type {MedicationType} from '../types/index.svelte';
+    import MedicationRow from './MedicationRow.svelte';
+    import {initialiseSdk, searchMedications} from "../../lib/cardinal";
+    import {onDestroy, onMount} from "svelte";
+    import {Amp, AmpStatus, DmppCodeType, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+    import InfiniteScroll from "./InfiniteScroll.svelte";
 
-  let sdk: any;
+    let sdk: any;
 
-  let focusedMedicationIndex = $state(-1);
-  let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
-  let disableHover = $state(false);
+    let focusedMedicationIndex = $state(-1);
+    let resultRefs: (HTMLLIElement | null)[] = $state([]); // Array to store references to list items
+    let disableHover = $state(false);
 
-  onMount(async () => {
-    sdk = await initialiseSdk()
-    focusedMedicationIndex = 0;
-  });
+    onMount(async () => {
+        sdk = await initialiseSdk()
+        focusedMedicationIndex = 0;
+    });
 
-  onDestroy(() => {
-    window.removeEventListener("keydown", handleKeyDown);
-    window.removeEventListener("mousemove", handleMouseMove);
-  });
+    onDestroy(() => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("mousemove", handleMouseMove);
+    });
 
-  let searchQuery: string | undefined = $state();
-  let dropdownDisplayed: boolean = $derived(!!searchQuery);
-  let displayedMedications: PaginatedListIterator<Amp> | undefined
-  let pages: MedicationType[] = $state([]);
-  let newPages: MedicationType[][] = $state([]);
-  let {deliveryEnvironment, handleAddPrescription, isMedicationPrescriptionModalOpen}: {
-    deliveryEnvironment: string,
-    handleAddPrescription: (medication: MedicationType) => void
-    isMedicationPrescriptionModalOpen: boolean
-  } = $props()
+    let searchQuery: string | undefined = $state();
+    let dropdownDisplayed: boolean = $derived(!!searchQuery);
+    let displayedMedications: PaginatedListIterator<Amp> | undefined
+    let pages: MedicationType[] = $state([]);
+    let newPages: MedicationType[][] = $state([]);
+    let {deliveryEnvironment, handleAddPrescription, isMedicationPrescriptionModalOpen}: {
+        deliveryEnvironment: string,
+        handleAddPrescription: (medication: MedicationType) => void
+        isMedicationPrescriptionModalOpen: boolean
+    } = $props()
 
-  async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
-    const now = Date.now()
-    const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
-    const page: MedicationType[] = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
-      return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo)) && ampp.dmpps?.some((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment);
-    }).map((ampp) => {
-      let dmpp = ampp.dmpps?.find((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment && dmpp.codeType == DmppCodeType.Cnk);
-      return {
-        ampId: amp.id,
-        id: ampp.ctiExtended,
-        cnk: dmpp?.code,
-        dmppProductId: dmpp?.productId,
-        title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
-        activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
-        price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : '',
-        crmLink: ampp.crmLink?.fr,
-        patientInformationLeafletLink: ampp.leafletLink?.fr,
-        blackTriangle: amp.blackTriangle,
-        speciallyRegulated: ampp.speciallyRegulated,
-        genericPrescriptionRequired: ampp.genericPrescriptionRequired,
-        intendedName: ampp.prescriptionName?.fr
-      } as MedicationType
-    }))
-    return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
-  }
+    async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+        const now = Date.now()
+        const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
+        const page: MedicationType[] = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+            return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo)) && ampp.dmpps?.some((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment);
+        }).map((ampp) => {
+            let dmpp = ampp.dmpps?.find((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment && dmpp.codeType == DmppCodeType.Cnk);
+            return {
+                ampId: amp.id,
+                id: ampp.ctiExtended,
+                cnk: dmpp?.code,
+                dmppProductId: dmpp?.productId,
+                title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
+                activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
+                price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : '',
+                crmLink: ampp.crmLink?.fr,
+                patientInformationLeafletLink: ampp.leafletLink?.fr,
+                blackTriangle: amp.blackTriangle,
+                speciallyRegulated: ampp.speciallyRegulated,
+                genericPrescriptionRequired: ampp.genericPrescriptionRequired,
+                intendedName: ampp.prescriptionName?.fr
+            } as MedicationType
+        }))
+        return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
+    }
 
-  $effect(() => {
-    let q = searchQuery;
-    if (q && q.length >= 3) {
-      const cachedQuery = q
-      pages = []
-      setTimeout(() => {
-        if (cachedQuery === searchQuery) {
-          searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
-            displayedMedications = medications;
-            if (medications) {
-              const firstPage = await loadPage(medications, 10);
-              pages = [firstPage].flat()
-            }
-          });
+    $effect(() => {
+        let q = searchQuery;
+        if (q && q.length >= 3) {
+            const cachedQuery = q
+            pages = []
+            setTimeout(() => {
+                if (cachedQuery === searchQuery) {
+                    searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
+                        displayedMedications = medications;
+                        if (medications) {
+                            const firstPage = await loadPage(medications, 10);
+                            pages = [firstPage].flat()
+                        }
+                    });
+                }
+            }, 100)
+
         }
-      }, 100)
+    });
 
-    }
-  });
-
-  const loadMore = async () => {
-    if (displayedMedications) {
-      newPages = [await loadPage(displayedMedications, 10)]
-      pages = [...pages, ...newPages].flat()
-    }
-  }
-
-  const totalPagesLength = $derived(pages.length)
-
-  function handleKeyDown(event: KeyboardEvent): void {
-
-    if (isMedicationPrescriptionModalOpen) return;
-
-    const defaultActions = () => {
-      event.preventDefault(); // Prevent default scrolling behavior
-      disableHover = true; // Disable hover effects
+    const loadMore = async () => {
+        if (displayedMedications) {
+            newPages = [await loadPage(displayedMedications, 10)]
+            pages = [...pages, ...newPages].flat()
+        }
     }
 
-    if (event.key === 'ArrowDown') {
-      defaultActions()
-      focusedMedicationIndex = (focusedMedicationIndex + 1) % totalPagesLength;
-      scrollToFocusedItem();
-    } else if (event.key === 'ArrowUp') {
-      defaultActions()
-      focusedMedicationIndex = (focusedMedicationIndex - 1 + totalPagesLength) % totalPagesLength;
-      scrollToFocusedItem();
-    } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
-      disableHover = false;
-      handleAddPrescription(pages[focusedMedicationIndex])
-    }
-  }
+    const totalPagesLength = $derived(pages.length)
 
-  function scrollToFocusedItem(): void {
-    if (focusedMedicationIndex >= 0 && resultRefs[focusedMedicationIndex]) {
-      resultRefs[focusedMedicationIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-    }
-  }
+    function handleKeyDown(event: KeyboardEvent): void {
 
-  function handleMouseMove() {
-    if (!isMedicationPrescriptionModalOpen) disableHover = false; // Re-enable hover on mouse movement
-  }
+        if (isMedicationPrescriptionModalOpen) return;
+
+        const defaultActions = () => {
+            event.preventDefault(); // Prevent default scrolling behavior
+            disableHover = true; // Disable hover effects
+        }
+
+        if (event.key === 'ArrowDown') {
+            defaultActions()
+            focusedMedicationIndex = (focusedMedicationIndex + 1) % totalPagesLength;
+            scrollToFocusedItem();
+        } else if (event.key === 'ArrowUp') {
+            defaultActions()
+            focusedMedicationIndex = (focusedMedicationIndex - 1 + totalPagesLength) % totalPagesLength;
+            scrollToFocusedItem();
+        } else if (event.key === 'Enter' && focusedMedicationIndex >= 0) {
+            event.preventDefault()
+            disableHover = false;
+            handleAddPrescription(pages[focusedMedicationIndex])
+        }
+    }
+
+    function scrollToFocusedItem(): void {
+        if (focusedMedicationIndex >= 0 && resultRefs[focusedMedicationIndex]) {
+            resultRefs[focusedMedicationIndex]?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        }
+    }
+
+    function handleMouseMove() {
+        if (!isMedicationPrescriptionModalOpen) disableHover = false; // Re-enable hover on mouse movement
+    }
 </script>
 
 <div
@@ -134,7 +135,8 @@
     <div class:dropdownDisplayed class='prescribeMedications__search'>
         <p class='prescribeMedications__search'>Trouver un médicament:</p>
         <label for='searchMedications' class='prescribeMedications__search__inputWrap'>
-            <input id='searchMedications' type='text' placeholder='Trouver un médicament' bind:value={searchQuery}/>
+            <input id='searchMedications' type='text' placeholder='Trouver un médicament' autocomplete="off"
+                   autocapitalize="off" bind:value={searchQuery}/>
             <SearchIcn/>
         </label>
     </div>

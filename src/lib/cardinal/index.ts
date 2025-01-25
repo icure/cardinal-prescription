@@ -5,7 +5,7 @@ export const initialiseSdk = async () => {
   try {
     const sdk = await CardinalBeSamSdk.initialize(
       undefined,
-      'https://api.icure.cloud',
+      'https://nightly.icure.cloud',
       new Credentials.UsernamePassword(
         'larisa.shashuk+medicationsTest@gmail.com',
         '75b00167-a1e3-4825-b262-396617c71cab'

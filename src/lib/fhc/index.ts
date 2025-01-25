@@ -1,91 +1,267 @@
-import type {MedicationType} from "../../src/types/index.svelte";
+import type {Patient, PrescribedMedicationType, Prescriber} from "../../src/types/index.svelte";
+import {dateEncode, fhcRecipeApi, fhcStsApi, Prescription, PrescriptionRequest, UUIDType} from "@icure/be-fhc-api";
 
-interface Prescriber {
-    lastName: string;
-    firstName: string;
-    riziv: string;
+const vendor = {
+    vendorEmail: "support@test.be",
+    vendorName: "vendorName",
+    vendorPhone: "+3200000000",
 }
 
-// WARNING: This is not a drop in replacement solution and
-// it might not work for some edge cases. Test your code!
-const chunk = <K>(arr: K[], chunkSize = 1, cache: K[][] = []) => {
-    const tmp = [...arr]
-    if (chunkSize <= 0) return cache
-    while (tmp.length) cache.push(tmp.splice(0, chunkSize))
-    return cache
+const usedPackage = {
+    packageName: "test[test/1.0]-freehealth-connector",
+    packageVersion: "1.0]-freehealth-connector",
 }
 
-export const print = (prescriber: Prescriber, m: MedicationType[]) => {
-    chunk(m,4).map((m) => `
-       
-<div class="header">
-    <h1>PREUVE DE PRESCRIPTION ELECTRONIQUE</h1>
-    <p>Veuillez présenter ce document à votre pharmacien pour scanner le code-barres et vous délivrer les médicaments prescrits.</p>
-</div>
 
-<div class="options">
-    <p><strong>De quelles options disposez-vous pour vous rendre à la pharmacie si vous avez perdu ce document ?</strong></p>
-    <ol>
-        <li>Via Masanté.be - MyHealthViewer - App MesMédicaments ou toute autre App, vous pouvez montrer votre prescription au pharmacien, qui lira le code-barres.</li>
-        <li>Vous pouvez également aller chercher les produits prescrits avec votre eID (ou votre numéro de registre national si votre eID a été lue par le pharmacien qui vous délivre les produits dans les 15 mois précédents).</li>
-    </ol>
-</div>
+export interface TokenStore {
+    put: (id: string, data: string) => Promise<string>,
+    get: (id: string) => Promise<string>
+}
 
-<div class="prescription-section">
-    <p><strong>Prescripteur :</strong> ${prescriber.lastName} ${prescriber.firstName} ${prescriber.riziv} &nbsp;&nbsp;&nbsp; <strong>Bénéficiaire :</strong> ${patient.lastName} ${patient.firstName} ${patient.ssin}</p>
-    <h3>Contenu de la prescription électronique</h3>
+export async function openCertificatesDatabase() {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('CertificateStore', 1);
 
-    <div class="prescription-item">
-        <div>
-            <p><strong>Produit 1</strong></p>
-            <p>Date : ${m[0]?.date}</p>
-            <p>Date de fin pour l'exécution :${m[0]?.endDate}</p>
-        </div>
-        <div>
-            <p><div class="right"><strong>RID 1</strong></div></p>
-            <div class="barcode right">${m[0]?.rid}</div>
-        </div>
-    </div>
+        request.onupgradeneeded = (event) => {
+            const database = (event.target as IDBOpenDBRequest).result;
+            database.createObjectStore('certificates', {keyPath: 'id'});
+        };
 
-    <div class="prescription-item">
-        <div>
-            <p><strong>RID 2</strong></p>
-            <div class="barcode">${m[1]?.rid}</div>
-        </div>
-        <div>
-            <p><strong>Produit 2</strong></p>
-            <p>Date :${m[1]?.date}</p>
-            <p>Date de fin pour l'exécution :${m[1]?.endDate}</p>
-        </div>
-    </div>
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
 
-    <div class="prescription-item">
-        <div>
-            <p><strong>Produit 3</strong></p>
-            <p>Date :${m[2]?.date}</p>
-            <p>Date de fin pour l'exécution :${m[2]?.endDate}</p>
-        </div>
-        <div>
-            <p><div class="right"><strong>RID 3</strong></div></p>
-            <div class="barcode right">${m[2]?.rid}</div>
-        </div>
-    </div>
+export async function loadCertificateInformation(db: IDBDatabase, id: string): Promise<{
+    salt: ArrayBuffer,
+    iv: ArrayBuffer,
+    encryptedCertificate: ArrayBuffer
+}> {
+    const transaction = db.transaction('certificates', 'readonly');
+    const store = transaction.objectStore('certificates');
 
-    <div class="prescription-item">
-        <div>
-            <p><strong>RID 4</strong></p>
-            <div class="barcode">${m[3]?.rid}</div>
-        </div>
-        <div>
-            <p><strong>Produit 4</strong></p>
-            <p>Date :${m[3]?.date}</p>
-            <p>Date de fin pour l'exécution :${m[3]?.endDate}</p>
-        </div>
-    </div>
-</div>
+    const request = store.get(id);
+    const record = await new Promise<any>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
 
-</body>
-</html>
+    if (!record) {
+        throw new Error('Record not found')
+    }
+    return record;
+}
 
-    `)
+export async function loadAndDecryptCertificate(password: string, id: string): Promise<ArrayBuffer | undefined> {
+    const db = await openCertificatesDatabase();
+    if (!db) {
+        console.error('Database not initialized');
+        return undefined;
+    }
+
+    const {salt, iv, encryptedCertificate} = await loadCertificateInformation(db, id);
+
+    // Derive a key from the password using PBKDF2
+    const passwordKey = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        {name: 'PBKDF2'},
+        false,
+        ['deriveKey']
+    );
+
+    const decryptionKey = await crypto.subtle.deriveKey(
+        {
+            name: 'PBKDF2',
+            salt: new Uint8Array(salt),
+            iterations: 100000,
+            hash: 'SHA-256'
+        },
+        passwordKey,
+        {name: 'AES-GCM', length: 256},
+        false,
+        ['decrypt']
+    );
+
+    // Decrypt the certificate
+    return await crypto.subtle.decrypt(
+        {name: 'AES-GCM', iv: new Uint8Array(iv)},
+        decryptionKey,
+        new Uint8Array(encryptedCertificate)
+    );
+}
+
+export async function uploadAndEncrypt(db: IDBDatabase, id: string, passphrase: string, certificate: ArrayBuffer) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    // Derive a key from the password using PBKDF2
+    const passwordKey = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(passphrase),
+        {name: 'PBKDF2'},
+        false,
+        ['deriveKey']
+    );
+
+    const encryptionKey = await crypto.subtle.deriveKey(
+        {
+            name: 'PBKDF2',
+            salt,
+            iterations: 100000,
+            hash: 'SHA-256'
+        },
+        passwordKey,
+        {name: 'AES-GCM', length: 256},
+        false,
+        ['encrypt']
+    );
+
+    return new Promise<string>(async (resolve, reject) => {
+        try {
+            // Ensure the database is available
+            if (!db) {
+                throw new Error("IndexedDB instance is not available.");
+            }
+
+            // Encrypt the certificate (outside the transaction to avoid delays)
+            const encryptedCertificate = await crypto.subtle.encrypt(
+                {name: 'AES-GCM', iv},
+                encryptionKey,
+                certificate
+            );
+
+            // Start a transaction
+            const transaction = db.transaction('certificates', 'readwrite');
+            const store = transaction.objectStore('certificates');
+
+            // Convert the encrypted certificate and other data to a storable format
+            const record = {
+                id: id,
+                salt: Array.from(salt), // Convert TypedArray to a normal array
+                iv: Array.from(iv),
+                encryptedCertificate: Array.from(new Uint8Array(encryptedCertificate)) // Convert ArrayBuffer to an array
+            };
+
+            // Use a single transaction to perform all operations
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                if (request.result) {
+                    // Update the existing record
+                    const putRequest = store.put(record);
+                    putRequest.onsuccess = () => {
+                        console.log(`Record with ID ${id} successfully updated.`);
+                        resolve(id);
+                    };
+                    putRequest.onerror = () => {
+                        console.error(`Error updating record with ID ${id}:`, putRequest.error);
+                        reject(putRequest.error);
+                    };
+                } else {
+                    // Add a new record
+                    const addRequest = store.add(record);
+                    addRequest.onsuccess = () => {
+                        console.log(`Record with ID ${id} successfully added.`);
+                        resolve(id);
+                    };
+                    addRequest.onerror = () => {
+                        console.error(`Error adding record with ID ${id}:`, addRequest.error);
+                        reject(addRequest.error);
+                    };
+                }
+            };
+
+            request.onerror = () => {
+                console.error(`Error retrieving record with ID ${id}:`, request.error);
+                reject(request.error);
+            };
+
+            // Transaction completion handlers
+            transaction.oncomplete = () => {
+                console.log("Transaction completed successfully.");
+            };
+
+            transaction.onerror = () => {
+                console.error("Transaction failed:", transaction.error);
+            };
+
+            transaction.onabort = () => {
+                console.error("Transaction aborted.");
+            };
+        } catch (error) {
+            console.error("An error occurred:", error);
+        }
+    })
+}
+
+export const makePrescriptionRequest = (samVersion: string, prescriber: Prescriber, patient: Patient, prescribedMedication: PrescribedMedicationType): PrescriptionRequest => new PrescriptionRequest({
+    medications: [prescribedMedication.medication],
+    patient: {
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        ssin: patient.ssin,
+        dateOfBirth: patient.dateOfBirth,
+    },
+    hcp: {
+        firstName: prescriber.firstName,
+        lastName: prescriber.lastName,
+        ssin: prescriber.ssin,
+        nihii: prescriber.nihii,
+        addresses: prescriber.addresses,
+    },
+    prescriptionType: "P0",
+    feedback: false,
+    vendorName: vendor.vendorName,
+    vendorEmail: vendor.vendorEmail,
+    vendorPhone: vendor.vendorPhone,
+    packageName: usedPackage.packageName,
+    packageVersion: usedPackage.packageVersion,
+    vision: prescribedMedication.pharmacistVisibility,
+    visionOthers: prescribedMedication.prescriberVisibility,
+    samVersion: samVersion,
+    deliveryDate: prescribedMedication.medication.beginMoment ?? dateEncode(new Date()),
+    expirationDate: prescribedMedication.medication.beginMoment ?? dateEncode(new Date(+new Date() + 1000*3600*24*90) ),
+    lang: "fr"
+
+})
+
+export const sendRecipe = async (samVersion: string, prescriber: Prescriber, patient: Patient, prescribedMedication: PrescribedMedicationType, cache: TokenStore, passphrase: string): Promise<Prescription[]> => {
+    const prescription = makePrescriptionRequest(samVersion, prescriber, patient, prescribedMedication)
+    if (!prescriber || !prescriber.ssin || !prescriber.nihii) {
+        throw new Error("Missing prescriber information")
+    }
+    const keystore = await loadAndDecryptCertificate(passphrase, prescriber.ssin)
+    if (!keystore) {
+        throw new Error("Cannot obtain keystore")
+    }
+
+    const url = "https://fhcad.taktik.to" //"https://fhcacc.icure.cloud"
+
+    const sts = new fhcStsApi(url, [])
+    const recipe = new fhcRecipeApi(url, [])
+
+    let storeKey = `keystore.${prescriber.ssin}`;
+    let tokenKey = `token.${prescriber.ssin}`;
+    const keystoreUuid = (await cache.get(storeKey)) ?? await sts.uploadKeystoreUsingPOST(keystore).then(({ uuid }: UUIDType) => {
+        if (!uuid) {
+            throw new Error("Cannot obtain keystore uuid")
+        }
+        return cache.put(storeKey, uuid);
+    })
+    const stsToken = await sts.requestTokenUsingGET(passphrase, prescriber.ssin, keystoreUuid, "doctor", await cache.get(tokenKey))
+    if (!stsToken.tokenId) {
+        throw new Error("Cannot obtain token not found")
+    }
+    return Promise.all(prescription.medications?.map((m) => recipe.createPrescriptionV4UsingPOST(keystoreUuid,
+        stsToken.tokenId!,
+        passphrase,
+        "persphysician",
+        prescriber.nihii!,
+        prescriber.ssin!,
+        `${prescriber.firstName!} ${prescriber.lastName!}`,
+        "iCure",
+        "1",
+        new PrescriptionRequest({...prescription, medications: [m]})
+    )) ?? [])
 }
