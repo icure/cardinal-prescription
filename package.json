@@ -15,6 +15,7 @@
     "@icure/cardinal-be-sam": "./tsPackage",
     "@icure/medication-sdk": "0.0.5",
     "jsbarcode": "^3.11.6",
+    "print-js": "^1.6.0",
     "uuid": "^11.0.3"
   },
   "devDependencies": {

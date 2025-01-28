@@ -23,7 +23,7 @@
         <p class='prescriptions__title'>Médicaments à prescrire:</p>
         <div class='prescriptions__rows'>
             {#each prescribedMedications as medication}
-                <PrescriptionRow medicationToPrescribe={medication} {handleModifyPrescription}
+                <PrescriptionRow prescribedMedication={medication} {handleModifyPrescription}
                                  {handleDeletePrescription}/>
             {/each}
         </div>

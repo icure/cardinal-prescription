@@ -24,32 +24,32 @@
 
     const durationTimeUnits = [
         {
-            value: 'jour',
+            value: '1',
             label: 'jour'
         },
         {
-            value: 'semaine',
+            value: '7',
             label: 'semaine'
         }];
     const periodicityTimeUnits = [
         {
-            value: 'aucune',
+            value: '0',
             label: 'aucune'
         },
         {
-            value: 'semaine',
+            value: '7',
             label: 'semaine'
         },
         {
-            value: '2 semaines',
+            value: '14',
             label: '2 semaines',
         },
         {
-            value: '3 semaines',
+            value: '21',
             label: '3 semaines',
         },
         {
-            value: 'x nombre de jours',
+            value: '1',
             label: 'x nombre de jours'
         }
     ];

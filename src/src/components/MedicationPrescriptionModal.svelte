@@ -20,17 +20,18 @@
     import {clickOutside} from '../utils/clickOutside'
     import {
         durationTimeUnits, findCommonSequence,
-        periodicityTimeUnits, type PharmacistVisibilityOption,
-        pharmacistVisibilityOptions, type PrescriberVisibilityOption,
+        periodicityTimeUnits,
+        pharmacistVisibilityOptions,
         practitionerVisibilityOptions,
         reimbursementOptions
     } from '../helpers/index.svelte'
+    import {offsetDate} from "../../lib/fhc";
 
-    let { medicationToPrescribe, prescribedMedication, handleClose, handleSave, modalTitle }: {
+    let {medicationToPrescribe, prescribedMedication, handleClose, handleSave, modalTitle}: {
         medicationToPrescribe?: MedicationType,
         prescribedMedication?: PrescribedMedicationType,
         handleClose: () => void,
-        handleSave: ({}: PrescribedMedicationType) => void
+        handleSave: ({}: PrescribedMedicationType[]) => void
         modalTitle: string
     } = $props();
 
@@ -71,21 +72,22 @@
     let treatmentStartDate: string | undefined = $state(getTreatmentStartDate());
     let executableUntil: string | undefined = $state(getExecutableUntilDate());
 
-    let prescriptionsNumber: number | undefined = $state(prescribedMedication?.prescriptionsNumber ?? 1);
-    let periodicityTimeUnit: string = $state(prescribedMedication?.periodicityTimeUnit ?? periodicityTimeUnits[0].value);
-    let periodicityDaysNumber: number | undefined = $state(prescribedMedication?.periodicityDaysNumber ?? undefined);
+    let prescriptionsNumber: number | undefined = $state(1);
+    let periodicityTimeUnit: string = $state(periodicityTimeUnits[0].value);
+    let periodicityDaysNumber: number | undefined = $state(1);
 
-    let substitutionAllowed: boolean = $state(prescribedMedication?.substitutionAllowed ?? false)
+    let substitutionAllowed: boolean = $state(prescribedMedication?.medication?.substitutionAllowed ?? false)
 
     // Extra fields
     let showExtraFields = $state(false);
     let recipeInstructionForPatient: string | undefined = $state(prescribedMedication?.medication.recipeInstructionForPatient ?? undefined);
-    let instructionsForReimbursement: string | undefined = $state(prescribedMedication?.instructionsForReimbursement ?? undefined);
+    let instructionsForReimbursement: string | undefined = $state(prescribedMedication?.medication?.instructionsForReimbursement ?? undefined);
     let practitionerVisibility: PractitionerVisibility = $state(prescribedMedication?.prescriberVisibility ?? practitionerVisibilityOptions[0]?.value);
     let pharmacistVisibility: PharmacistVisibility = $state(prescribedMedication?.pharmacistVisibility ?? pharmacistVisibilityOptions[0]?.value);
 
     let inputsToValidate: string[] = $state([]);
     let posologySuggestions: string[] = $state([]);
+
 
     $effect(() => {
         inputsToValidate = [
@@ -109,6 +111,13 @@
             }
         }, 100)
     });
+
+    $effect(() => {
+        if (periodicityTimeUnit !== '1') {
+            periodicityDaysNumber = 1;
+        }
+    });
+
 
     const errorMessages = {
         isRequired: 'Ce champ est obligatoire.'
@@ -142,8 +151,8 @@
             duration,
             durationTimeUnit,
             treatmentStartDate,
-            prescriptionsNumber,
             executableUntil,
+            prescriptionsNumber,
             periodicityTimeUnit,
             periodicityDaysNumber,
             substitutionAllowed,
@@ -163,37 +172,50 @@
                     return value * 7
                 }
             }
-            const medication = prescribedMedication?.medication ?? new Medication({
-                medicinalProduct: new Medicinalproduct({
-                    samId: medicationToPrescribe!.dmppProductId,
-                    intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe!.cnk!)],
-                    intendedname: medicationToPrescribe!.intendedName
-                }),
-                beginMoment: parseInt((data.treatmentStartDate as string).replace(/-/g, '')),
-                endMoment: parseInt((data.executableUntil as string).replace(/-/g, '')),
+            const prescribedMedications = prescribedMedication ?
+                [{
+                    ...prescribedMedication,
+                    medication: new Medication({
+                        ...prescribedMedication.medication,
 
-                duration: new Duration({
-                    unit: Code.from("CD-TIMEUNIT", "D"),
-                    value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
-                }),
+                        duration: new Duration({
+                            unit: Code.from("CD-TIMEUNIT", "D"),
+                            value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
+                        }),
+                        instructionForPatient: data.dosage,
+                        recipeInstructionForPatient: data.recipeInstructionForPatient,
+                        instructionsForReimbursement: data.instructionsForReimbursement,
+                        substitutionAllowed: data.substitutionAllowed
+                    }),
+                    prescriberVisibility: data.prescriberVisibility,
+                    pharmacistVisibility: data.pharmacistVisibility,
+                }]
+                : Array.from({length: (data.prescriptionsNumber ?? 1)}, (_, i) => i).map((idx) => ({
+                    uuid: uuid(),
+                    medication: new Medication({
+                        medicinalProduct: new Medicinalproduct({
+                            samId: medicationToPrescribe!.dmppProductId,
+                            intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe!.cnk!)],
+                            intendedname: medicationToPrescribe!.intendedName
+                        }),
+                        beginMoment: offsetDate(parseInt((data.treatmentStartDate as string).replace(/-/g, '')), data.periodicityTimeUnit ? parseInt(data.periodicityTimeUnit) * (data.periodicityDaysNumber ?? 1) * idx : 0),
+                        endMoment: offsetDate(parseInt((data.executableUntil as string).replace(/-/g, '')), data.periodicityTimeUnit ? parseInt(data.periodicityTimeUnit) * (data.periodicityDaysNumber ?? 1) * idx : 0),
 
-                instructionForPatient: data.dosage,
-                recipeInstructionForPatient: data.recipeInstructionForPatient,
-                instructionsForReimbursement: data.instructionsForReimbursement,
-                substitutionAllowed: data.substitutionAllowed
-            })
+                        duration: new Duration({
+                            unit: Code.from("CD-TIMEUNIT", "D"),
+                            value: getDurationInDays(data.durationTimeUnit as string, data.duration as number)
+                        }),
 
-            handleSave({
-                medication,
-                ampId: medicationToPrescribe?.ampId ?? uuid(),
-                periodicityTimeUnit,
-                periodicityDaysNumber,
-                substitutionAllowed,
-                recipeInstructionForPatient,
-                instructionsForReimbursement,
-                prescriberVisibility: practitionerVisibility,
-                pharmacistVisibility: pharmacistVisibility,
-            })
+                        instructionForPatient: data.dosage,
+                        recipeInstructionForPatient: data.recipeInstructionForPatient,
+                        instructionsForReimbursement: data.instructionsForReimbursement,
+                        substitutionAllowed: data.substitutionAllowed
+                    }),
+                    prescriberVisibility: data.prescriberVisibility,
+                    pharmacistVisibility: data.pharmacistVisibility,
+                }))
+
+            handleSave(prescribedMedications)
             handleClose()
         } else {
             console.log('Invalid Form');
@@ -332,20 +354,22 @@
                                    errorMessage={errors.executableUntil?.validationError}
                                    id='executableUntil' type='date'/>
                         </div>
-                        <div class='addMedicationForm__body__content__inputs__group'>
-                            <Input label='Nombre de prescriptions' bind:value={prescriptionsNumber} required
-                                   errorMessage={errors.prescriptionsNumber?.validationError}
-                                   id='prescriptionsNumber' type='number' min={1} max={12}/>
-                            {#if prescriptionsNumber && prescriptionsNumber > 1}
-                                <Select label='Périodicité' bind:value={periodicityTimeUnit} required
-                                        id='periodicityTimeUnit' options={periodicityTimeUnits}/>
-                            {/if}
-                            {#if periodicityTimeUnit === 'x nombre de jours'}
-                                <Input label='Nombre de jours' bind:value={periodicityDaysNumber} required
-                                       errorMessage={errors.periodicityDaysNumber?.validationError  }
-                                       id='periodicityDaysNumber' type='number' min={1}/>
-                            {/if}
-                        </div>
+                        {#if !prescribedMedication}
+                            <div class='addMedicationForm__body__content__inputs__group'>
+                                <Input label='Nombre de prescriptions' bind:value={prescriptionsNumber} required
+                                       errorMessage={errors.prescriptionsNumber?.validationError}
+                                       id='prescriptionsNumber' type='number' min={1} max={12}/>
+                                {#if prescriptionsNumber && prescriptionsNumber > 1}
+                                    <Select label='Périodicité' bind:value={periodicityTimeUnit} required
+                                            id='periodicityTimeUnit' options={periodicityTimeUnits}/>
+                                {/if}
+                                {#if periodicityTimeUnit === '1'}
+                                    <Input label='Nombre de jours' bind:value={periodicityDaysNumber} required
+                                           errorMessage={errors.periodicityDaysNumber?.validationError  }
+                                           id='periodicityDaysNumber' type='number' min={1}/>
+                                {/if}
+                            </div>
+                        {/if}
                         <div class='addMedicationForm__body__content__inputs__radioBtns'>
                             <RadioButton name="substitutionAllowed" bind:value={substitutionAllowed}
                                          label="Substitution autorisée"

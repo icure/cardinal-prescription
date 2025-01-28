@@ -68,9 +68,13 @@
             setTimeout(() => {
                 if (cachedQuery === searchQuery) {
                     searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
+                        if (cachedQuery !== searchQuery) { return }
                         displayedMedications = medications;
                         if (medications) {
                             const firstPage = await loadPage(medications, 10);
+                            if (cachedQuery !== searchQuery) { return }
+
+                            console.log("First page is", firstPage)
                             pages = [firstPage].flat()
                         }
                     });

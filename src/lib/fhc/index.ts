@@ -1,5 +1,5 @@
 import type {Patient, PrescribedMedicationType, Prescriber} from "../../src/types/index.svelte";
-import {dateEncode, fhcRecipeApi, fhcStsApi, Prescription, PrescriptionRequest, UUIDType} from "@icure/be-fhc-api";
+import {fhcRecipeApi, fhcStsApi, Prescription, PrescriptionRequest, UUIDType} from "@icure/be-fhc-api";
 
 const vendor = {
     vendorEmail: "support@test.be",
@@ -16,6 +16,20 @@ const usedPackage = {
 export interface TokenStore {
     put: (id: string, data: string) => Promise<string>,
     get: (id: string) => Promise<string>
+}
+
+export function dateDecode(date: number) {
+    return date > 99990000 ? new Date(date/10000000000, (date/100000000)%100 - 1, (date/1000000)%100) : new Date(date/10000, (date/100)%100 - 1, date%100)
+}
+
+export function dateEncode(date: Date) {
+    return date.getFullYear()*10000 + (date.getMonth() + 1)*100 + date.getDate()
+}
+
+export function offsetDate(date: number, offsetInDays: number): number {
+    var result = new Date(dateDecode(date))
+    result.setDate(result.getDate() + offsetInDays);
+    return dateEncode(result);
 }
 
 export async function openCertificatesDatabase() {
@@ -236,7 +250,7 @@ export const sendRecipe = async (samVersion: string, prescriber: Prescriber, pat
         throw new Error("Cannot obtain keystore")
     }
 
-    const url = "https://fhcad.taktik.to" //"https://fhcacc.icure.cloud"
+    const url = "https://fhcacc.icure.cloud"
 
     const sts = new fhcStsApi(url, [])
     const recipe = new fhcRecipeApi(url, [])

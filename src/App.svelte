@@ -16,6 +16,7 @@
     import Button from "./src/components/common/Button.svelte";
     import Input from "./src/components/common/Input.svelte";
     import {Prescription} from "@icure/be-fhc-api/model/Prescription";
+    import PrescriptionPrintModal from "./src/components/PrescriptionPrintModal.svelte";
 
     let sdk: any;
     let samVersion: string | undefined = $state()
@@ -71,7 +72,7 @@
 
     $effect(() => {
         if (certificateUploaded && passphrase) {
-            loadAndDecryptCertificate(passphrase, hcp.ssin).then((res) => {
+            loadAndDecryptCertificate(passphrase, hcp.ssin).then(() => {
                 certificateValid = true
             }).catch(() => {
                 certificateValid = false
@@ -81,6 +82,7 @@
 
     let showMedicationPrescriptionModal = $state(false);
     let medicationToPrescribe: MedicationType | undefined = $state()
+    let showPrintModal: boolean = $state(false)
 
     const handleAddPrescription = (medication: MedicationType) => {
         showMedicationPrescriptionModal = true
@@ -96,7 +98,7 @@
 
     const handleDeletePrescription = (prescribedMedication: PrescribedMedicationType) => {
         prescribedMedications = prescribedMedications.filter(
-            (item) => item.ampId !== prescribedMedication.ampId
+            (item) => item.uuid !== prescribedMedication.uuid
         );
     }
 
@@ -104,7 +106,7 @@
     let cache: Record<string, string> = $state({})
 
     const handleSendPrescription = () => {
-        prescribedMedications.map((med, idx) => {
+        prescribedMedications.filter((m) => !m.rid).map((med, idx) => {
             sendRecipe(
                 samVersion!,
                 hcp,
@@ -116,14 +118,20 @@
                 },
                 passphrase
             ).then((res: Prescription[]) => {
-                prescribedMedications = prescribedMedications.map((item, index) => index === idx ? {
+                prescribedMedications = prescribedMedications.map((item) => item.uuid === med.uuid ? {
                     ...item,
                     rid: res[0]?.rid
                 } : item)
             })
         })
     }
+
     const handlePrintPrescription = () => {
+        showPrintModal = true
+    }
+
+    const closePrintModal = () => {
+        showPrintModal = false
     }
 </script>
 
@@ -159,35 +167,37 @@
             <MedicationPrescriptionModal
                     modalTitle="Créer la prescription"
                     {medicationToPrescribe}
-                    handleSave={({medication, ampId}) =>{
-                    prescribedMedications.push({medication, ampId})
-                    medicationToPrescribe = undefined
-                }
-                    }
+                    handleSave={(newMedications) => {
+                        prescribedMedications = [...prescribedMedications, ...newMedications]
+                        medicationToPrescribe = undefined
+                    }}
                     handleClose={()=> {
-                    showMedicationPrescriptionModal = false
-                    medicationToPrescribe = undefined
-                }}
+                        showMedicationPrescriptionModal = false
+                        medicationToPrescribe = undefined
+                    }}
             />
         {/if}
 
         {#if !!prescribedMedicationToModify && showMedicationPrescriptionModal}
             <MedicationPrescriptionModal
                     modalTitle="Modifier la prescription"
-                    medicationToPrescribe={{...prescribedMedicationToModify.medication, ampId: prescribedMedicationToModify.ampId}}
-                    handleSave={({medication, ampId}) =>{
-                   prescribedMedications = prescribedMedications.map((item) => item.ampId === ampId ? {medication, ampId} : item);
-                   prescribedMedicationToModify = undefined
-                }}
+                    prescribedMedication={prescribedMedicationToModify}
+                    handleSave={([prescribedMedication]) => {
+                        prescribedMedications = prescribedMedications.map((item) => item.uuid === prescribedMedication.uuid ? prescribedMedication : item);
+                        prescribedMedicationToModify = undefined
+                    }}
                     handleClose={()=> {
-                    showMedicationPrescriptionModal = false
-                    prescribedMedicationToModify = undefined
-                }}
+                        showMedicationPrescriptionModal = false
+                        prescribedMedicationToModify = undefined
+                    }}
             />
         {/if}
         {#if prescribedMedications.length !== 0}
             <Prescriptions {handleDeletePrescription} {handleModifyPrescription}
                            {prescribedMedications} {handleSendPrescription} {handlePrintPrescription}/>
+        {/if}
+        {#if showPrintModal}
+            <PrescriptionPrintModal {prescribedMedications} prescriber={hcp} {patient} closeModal={closePrintModal}/>
         {/if}
     {/if}
 

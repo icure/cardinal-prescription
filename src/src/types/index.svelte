@@ -21,19 +21,14 @@
     };
 
     export type PrescribedMedicationType = {
+        uuid: string;
+        medication: Medication;
         rid?: string;
-        medication: Medication,
         ampId?: string;
         cnk?: string;
         dmppProductId?: string;
-        prescriptionsNumber?: number,
-        periodicityTimeUnit?: string,
-        periodicityDaysNumber?: number,
-        substitutionAllowed?: boolean,
-        recipeInstructionForPatient?: string,
-        instructionsForReimbursement?: string,
-        prescriberVisibility?: PractitionerVisibility,
-        pharmacistVisibility?: PharmacistVisibility,
+        prescriberVisibility?: PractitionerVisibility;
+        pharmacistVisibility?: PharmacistVisibility;
     }
 
     export type AddMedicationFormType = {

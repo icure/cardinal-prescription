@@ -1,47 +1,51 @@
 <script lang='ts'>
-  import {DeleteIcn, EditIcn} from '../icons/index.svelte';
-  import type {PrescribedMedicationType} from "../types/index.svelte";
+    import {DeleteIcn, EditIcn} from '../icons/index.svelte';
+    import type {PrescribedMedicationType} from "../types/index.svelte";
 
-  let {medicationToPrescribe, handleModifyPrescription, handleDeletePrescription}: {
-    medicationToPrescribe: PrescribedMedicationType,
-    handleModifyPrescription: (medication: PrescribedMedicationType) => void
-    handleDeletePrescription: (medication: PrescribedMedicationType) => void
-  } = $props();
+    let {prescribedMedication, handleModifyPrescription, handleDeletePrescription}: {
+        prescribedMedication: PrescribedMedicationType,
+        handleModifyPrescription: (medication: PrescribedMedicationType) => void
+        handleDeletePrescription: (medication: PrescribedMedicationType) => void
+    } = $props();
 
-  const colors = {
-    red: 'red',
-    blue: '#3D87C5',
-    gray: '#383A3C'
-  }
+    const colors = {
+        red: 'red',
+        blue: '#3D87C5',
+        gray: '#383A3C'
+    }
 
-  let editIcnColor = $state(colors.gray)
-  let deleteIcnColor = $state(colors.gray)
+    let editIcnColor = $state(colors.gray)
+    let deleteIcnColor = $state(colors.gray)
 
 </script>
 
-<div class='prescriptionRow'>
+<div class='prescriptionRow {prescribedMedication.rid?"prescribed":""}'>
     <div class='header'>
         <div class='header__prescription'>
             <div class='header__prescription__content'>
                 <div class='header__prescription__content__title'>
-                    <h3>{medicationToPrescribe.medication.medicinalProduct?.intendedname}</h3>
+                    <h3>{prescribedMedication.medication.medicinalProduct?.intendedname}</h3>
                 </div>
-                <p>{medicationToPrescribe.medication.instructionForPatient}</p>
+                <p>{prescribedMedication.medication.instructionForPatient}</p>
             </div>
         </div>
     </div>
-    <div class="actions">
-        <button class="actions__btn" onclick={() => handleModifyPrescription(medicationToPrescribe)}
-                onmouseenter={() => editIcnColor = colors.blue}
-                onmouseleave={() => editIcnColor = colors.gray}>
-            <EditIcn pathFill={editIcnColor}/>
-        </button>
-        <button class="actions__btn" onclick={() => handleDeletePrescription(medicationToPrescribe)}
-                onmouseenter={() => deleteIcnColor = colors.red}
-                onmouseleave={() => deleteIcnColor = colors.gray}>
-            <DeleteIcn pathFill={deleteIcnColor}/>
-        </button>
-    </div>
+    {#if !prescribedMedication.rid}
+        <div class="actions">
+            <button class="actions__btn" onclick={() => handleModifyPrescription(prescribedMedication)}
+                    onmouseenter={() => editIcnColor = colors.blue}
+                    onmouseleave={() => editIcnColor = colors.gray}>
+                <EditIcn pathFill={editIcnColor}/>
+            </button>
+            <button class="actions__btn" onclick={() => handleDeletePrescription(prescribedMedication)}
+                    onmouseenter={() => deleteIcnColor = colors.red}
+                    onmouseleave={() => deleteIcnColor = colors.gray}>
+                <DeleteIcn pathFill={deleteIcnColor}/>
+            </button>
+        </div>
+    {:else}
+        <div class='rid'>{prescribedMedication.rid}</div>
+    {/if}
 </div>
 
 <style lang='scss'>
@@ -72,6 +76,18 @@
       box-shadow: 0 0 0 2px rgba(app.$blue-900, 0.3);
     }
 
+    &.prescribed {
+      background: app.$green-200;
+      border-color: green;
+
+      &:hover {
+        border-color: green;
+        border-radius: inherit;
+        background: app.$green-200;
+        box-shadow: inherit;
+      }
+    }
+
     @include app.media-breakpoint-down(app.$sm) {
       flex-direction: column;
       justify-content: flex-start;
@@ -85,7 +101,6 @@
       justify-content: space-between;
       align-items: center;
       align-self: stretch;
-      background: #FFF;
 
       @include app.media-breakpoint-down(app.$sm) {
         width: 100%;
@@ -125,6 +140,11 @@
 
         }
       }
+    }
+
+    .rid {
+      font-size: 10px;
+      color: green;
     }
 
     .actions {
