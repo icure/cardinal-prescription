@@ -4,8 +4,16 @@
     import MedicationRow from './MedicationRow.svelte';
     import {initialiseSdk, searchMedications} from "../../lib/cardinal";
     import {onDestroy, onMount} from "svelte";
-    import {Amp, AmpStatus, DmppCodeType, type PaginatedListIterator} from "@icure/cardinal-be-sam";
+    import {
+        Amp,
+        AmpStatus,
+        DmppCodeType,
+        type Nmp,
+        type PaginatedListIterator,
+        type VmpGroup
+    } from "@icure/cardinal-be-sam";
     import InfiniteScroll from "./InfiniteScroll.svelte";
+    import {capitalize, mergeSortedPartialArraysN} from "../helpers/index.svelte";
 
     let sdk: any;
 
@@ -25,24 +33,34 @@
 
     let searchQuery: string | undefined = $state();
     let dropdownDisplayed: boolean = $derived(!!searchQuery);
-    let displayedMedications: PaginatedListIterator<Amp> | undefined
     let pages: MedicationType[] = $state([]);
-    let newPages: MedicationType[][] = $state([]);
+    let pagesPointers: number[] = $state([]);
+
+    let medications: PaginatedListIterator<Amp> | undefined = $state()
+    let molecules: PaginatedListIterator<VmpGroup> | undefined = $state()
+    let products: PaginatedListIterator<Nmp> | undefined = $state()
+
+    let medicationsPage: MedicationType[] = $state([]);
+    let moleculesPage: MedicationType[] = $state([]);
+    let productsPage: MedicationType[] = $state([]);
+
     let {deliveryEnvironment, handleAddPrescription, isMedicationPrescriptionModalOpen}: {
         deliveryEnvironment: string,
         handleAddPrescription: (medication: MedicationType) => void
         isMedicationPrescriptionModalOpen: boolean
     } = $props()
 
-    async function loadPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+    async function loadMedicationsPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
         const now = Date.now()
         const twoYearsAgo = now - 2 * 365 * 24 * 3600 * 1000;
-        const page: MedicationType[] = (!(await medications.hasNext()) ? [] : await medications.next(min)).flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
+        const loadedPage = !(await medications.hasNext()) ? [] : await medications.next(min);
+        const page: MedicationType[] = loadedPage.flatMap((amp: Amp) => amp.to && amp.to < now ? [] : amp.ampps.filter((ampp) => {
             return ampp.from && ampp.from < now && (!ampp.to || ampp.to > now) && ampp.status == AmpStatus.Authorized && ampp.commercializations?.some((c) => !!c.from && (!c.to || c.to > twoYearsAgo)) && ampp.dmpps?.some((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment);
         }).map((ampp) => {
             let dmpp = ampp.dmpps?.find((dmpp) => dmpp.from && dmpp.from < now && (!dmpp.to || dmpp.to > now) && dmpp.deliveryEnvironment?.toString() == deliveryEnvironment && dmpp.codeType == DmppCodeType.Cnk);
             return {
                 ampId: amp.id,
+                vmpGroupId: amp.vmp?.vmpGroup?.id,
                 id: ampp.ctiExtended,
                 cnk: dmpp?.code,
                 dmppProductId: dmpp?.productId,
@@ -57,7 +75,76 @@
                 intendedName: ampp.prescriptionName?.fr
             } as MedicationType
         }))
-        return page.length == 0 || page.length + acc.length >= min ? [...acc, ...page] : await loadPage(medications, min, [...acc, ...page])
+        return loadedPage.length < min || page.length + acc.length >= min ? [...acc, ...page] : await loadMedicationsPage(medications, min, [...acc, ...page])
+    }
+
+    async function loadMoleculesPage(molecules: PaginatedListIterator<VmpGroup>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+        const now = Date.now()
+        const loadedPage = !(await molecules.hasNext()) ? [] : await molecules.next(min);
+        const page: MedicationType[] = loadedPage.filter((vmp: VmpGroup) => !(vmp.to && vmp.to < now)).map((vmp) => {
+            return {
+                vmpGroupId: vmp.id,
+                id: vmp.code,
+                title: capitalize(vmp.name?.fr) ?? '',
+                standardDosage: vmp.standardDosage
+            } as MedicationType
+        })
+        return page.length < min || page.length + acc.length >= min ? [...acc, ...page] : await loadMoleculesPage(molecules, min, [...acc, ...page])
+    }
+
+    async function loadNonMedicinalPage(products: PaginatedListIterator<Nmp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
+        const now = Date.now()
+        const loadedPage = !(await products.hasNext()) ? [] : await products.next(min);
+        const page: MedicationType[] = loadedPage.filter((nmp: Nmp) => !(nmp.to && nmp.to < now)).map((nmp) => {
+            return {
+                nmpId: nmp.id,
+                id: nmp.code,
+                title: capitalize(nmp.name?.fr) ?? '',
+            } as MedicationType
+        })
+        return loadedPage.length < min || page.length + acc.length >= min ? [...acc, ...page] : await loadNonMedicinalPage(products, min, [...acc, ...page])
+    }
+
+    const loadUntil = async (toName: string | undefined, loadPage: () => Promise<MedicationType[]>) => {
+        let page = await loadPage()
+        const lcToName = toName?.toLowerCase();
+        while (page.length && (!lcToName || page[page.length - 1].title.toLowerCase() < lcToName)) {
+            let newPage = await loadPage()
+            if (!newPage.length) {
+                break
+            }
+            page = [...page, ...newPage]
+        }
+        return page
+    }
+
+    const loadMore = async () => {
+        const [result, pointers] = await mergeSortedPartialArraysN(10, [[...medicationsPage], [...moleculesPage], [...productsPage]], [
+            async (_, toName) => {
+                console.log("Loading medications until", toName)
+                const loaded = await loadUntil(toName, () => medications ? loadMedicationsPage(medications, 10) : Promise.resolve([]));
+                medicationsPage = [...medicationsPage, ...loaded]
+                return loaded
+            },
+            async (_, toName) => {
+                console.log("Loading molecules until", toName)
+                const loaded = await loadUntil(toName, () => molecules ? loadMoleculesPage(molecules, 10) : Promise.resolve([]));
+                moleculesPage = [...moleculesPage, ...loaded]
+                return loaded
+            },
+            async (_, toName) => {
+                console.log("Loading non-medications until", toName)
+                const loaded = await loadUntil(toName, () => products ? loadNonMedicinalPage(products, 10) : Promise.resolve([]));
+                productsPage = [...productsPage, ...loaded]
+                return loaded
+            }
+        ])
+
+        medicationsPage = medicationsPage.slice(pointers[0])
+        moleculesPage = moleculesPage.slice(pointers[1])
+        productsPage = productsPage.slice(pointers[2])
+
+        return result
     }
 
     $effect(() => {
@@ -67,16 +154,28 @@
             pages = []
             setTimeout(() => {
                 if (cachedQuery === searchQuery) {
-                    searchMedications(sdk, 'fr', cachedQuery).then(async (medications) => {
-                        if (cachedQuery !== searchQuery) { return }
-                        displayedMedications = medications;
-                        if (medications) {
-                            const firstPage = await loadPage(medications, 10);
-                            if (cachedQuery !== searchQuery) { return }
+                    searchMedications(sdk, 'fr', cachedQuery).then(async ([meds, mols, prods]) => {
+                        medications = meds;
+                        molecules = mols;
+                        products = prods;
 
-                            console.log("First page is", firstPage)
-                            pages = [firstPage].flat()
+                        if (cachedQuery !== searchQuery) {
+                            return
                         }
+
+                        [medicationsPage, moleculesPage, productsPage] = await Promise.all([
+                            medications ? loadMedicationsPage(medications, 10) : [],
+                            molecules ? loadMoleculesPage(molecules, 10) : [],
+                            products ? loadNonMedicinalPage(products, 10) : []
+                        ])
+
+                        if (cachedQuery !== searchQuery) {
+                            return
+                        }
+
+                        loadMore().then((result) => {
+                            pages = result
+                        })
                     });
                 }
             }, 100)
@@ -84,12 +183,6 @@
         }
     });
 
-    const loadMore = async () => {
-        if (displayedMedications) {
-            newPages = [await loadPage(displayedMedications, 10)]
-            pages = [...pages, ...newPages].flat()
-        }
-    }
 
     const totalPagesLength = $derived(pages.length)
 
@@ -157,7 +250,7 @@
             {/each}
             <InfiniteScroll
                     threshold={50}
-                    loadMore={() => loadMore()}/>
+                    loadMore={() => loadMore().then((results) => pages = [...pages, ...results])}/>
         </ul>
     {/if}
 </div>

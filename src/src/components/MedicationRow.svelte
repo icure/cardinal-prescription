@@ -1,60 +1,89 @@
 <script lang='ts'>
-  import type {MedicationType} from '../types/index.svelte';
-  import {BlackTriangleIcn, ChevronIcn, PillsBottleIcn, PlusIcn, PrescriptionIcn} from '../icons/index.svelte';
-  import {onMount} from "svelte";
-  import Tooltip from "./common/Tooltip.svelte";
+    import type {MedicationType} from '../types/index.svelte';
+    import {
+        BlackTriangleIcn,
+        ChevronIcn,
+        PillIcn,
+        PillsBottleIcn,
+        PlusIcn,
+        PrescriptionIcn
+    } from '../icons/index.svelte';
+    import {onMount} from "svelte";
+    import Tooltip from "./common/Tooltip.svelte";
+    import MoleculeIcn from "../icons/MoleculeIcn.svelte";
+    import WaterIcn from "../icons/WaterIcn.svelte";
 
-  let {medication, handleAddPrescription, id, focused, disableHover}: {
-    medication: MedicationType,
-    handleAddPrescription: (medication: MedicationType) => void
-    id: string
-    focused?: boolean
-    disableHover?: boolean
-  } = $props();
+    let {medication, handleAddPrescription, id, focused, disableHover}: {
+        medication: MedicationType,
+        handleAddPrescription: (medication: MedicationType) => void
+        id: string
+        focused?: boolean
+        disableHover?: boolean
+    } = $props();
 
-  let child: HTMLElement;
-  let distanceToParentTop: number = $state(0);
-  let isExpanded: boolean = $state(false)
+    let child: HTMLElement;
+    let distanceToParentTop: number = $state(0);
+    let isExpanded: boolean = $state(false)
 
-  onMount(() => {
-    const parentTop = child.parentElement?.getBoundingClientRect();
-    const childTop = child.getBoundingClientRect();
-    distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
-  });
+    onMount(() => {
+        const parentTop = child.parentElement?.getBoundingClientRect();
+        const childTop = child.getBoundingClientRect();
+        distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
+    });
 
-  const getSpecialRegulation = (code: number) => {
-    switch (code) {
-      case 1:
-        return 'No narcotic, specially regulated drug'
-      case 2:
-        return 'Narcotic, specially regulated drug'
-      default:
-        return 'No special regulation'
+    const getSpecialRegulation = (code: number) => {
+        switch (code) {
+            case 1:
+                return 'No narcotic, specially regulated drug'
+            case 2:
+                return 'Narcotic, specially regulated drug'
+            default:
+                return 'No special regulation'
+        }
     }
-  }
 </script>
 
 
 {#snippet blackTriangleIcn()}
-    <BlackTriangleIcn/>
+<BlackTriangleIcn/>
 {/snippet}
 {#snippet specialRegulationsIcn()}
-    <PillsBottleIcn/>
+<PillsBottleIcn/>
+{/snippet}
+{#snippet pillIcn()}
+<PillIcn/>
 {/snippet}
 {#snippet prescriptionRequiredIcn()}
-    <PrescriptionIcn/>
+<PrescriptionIcn/>
 {/snippet}
 {#snippet plusIcn()}
-    <PlusIcn/>
+<PlusIcn/>
+{/snippet}
+{#snippet moleculeIcn()}
+<MoleculeIcn/>
+{/snippet}
+{#snippet waterIcn()}
+<WaterIcn/>
 {/snippet}
 
 <div class:focused class:isExpanded class:disableHover class='medicationRow' bind:this={child} {id}>
     <div class='header'>
-        <div class='header__medication'>
-            <button class='header__medication__appPrescription' onclick={() => handleAddPrescription(medication)}>
-                <Tooltip content='Modify the prescription' iconSnippet={plusIcn}
-                         orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
-            </button>
+        <div class='header__medication' onclick={() => handleAddPrescription(medication)}>
+            <span class="header__medication__cat">
+                {#if medication.ampId}
+                    <span class="header__medication__cat__icon">
+                        <PillIcn/>
+                    </span>
+                {:else if medication.nmpId}
+                    <span class="header__medication__cat__icon">
+                        <WaterIcn/>
+                    </span>
+                {:else if medication.vmpGroupId}
+                    <span class="header__medication__cat__icon">
+                        <MoleculeIcn/>
+                    </span>
+                {/if}
+            </span>
             <div class='header__medication__content'>
                 <div class='header__medication__content__title'>
                     <h3>{medication.title}</h3>
@@ -159,7 +188,7 @@
           gap: 8px;
         }
 
-        &__appPrescription {
+        &__cat {
           width: 24px;
           height: 24px;
           display: flex;
@@ -168,6 +197,16 @@
           border-radius: 50%;
           border: 1px solid rgba(app.$burgundy-900, 0.35);
           background-color: #FFFFFF;
+
+          &__icon {
+            display: flex;
+            width: 22px;
+            height: 22px;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+            background: rgba(app.$orange-500, 0.26);
+          }
 
           &:hover {
             border: 1px solid rgba(app.$burgundy-900, 1);

@@ -1,12 +1,18 @@
 // @ts-ignore
-import {CardinalBeSamSdk, Credentials, type SamV2Api} from "@icure/cardinal-be-sam";
+import {
+  type Amp,
+  CardinalBeSamSdk,
+  Credentials, Nmp,
+  type PaginatedListIterator,
+  type SamV2Api, VmpGroup
+} from "@icure/cardinal-be-sam";
 
 export const initialiseSdk = async () => {
   try {
     const sdk = await CardinalBeSamSdk.initialize(
       undefined,
-      'https://nightly.icure.cloud',
-      new Credentials.UsernamePassword(
+      'https://nightly.icure.cloud', //'http://127.0.0.1:16043',
+        new Credentials.UsernamePassword(
         'larisa.shashuk+medicationsTest@gmail.com',
         '75b00167-a1e3-4825-b262-396617c71cab'
       )
@@ -17,11 +23,16 @@ export const initialiseSdk = async () => {
   }
 };
 
-export const searchMedications = async (sdk: SamV2Api, lang: string, query: string) => {
+export const searchMedications: (sdk: SamV2Api, lang: string, query: string) => Promise<[PaginatedListIterator<Amp>,PaginatedListIterator<VmpGroup>, PaginatedListIterator<Nmp>]> = async (sdk: SamV2Api, lang: string, query: string) => {
   try {
-    return await sdk.findPaginatedAmpsByLabel(lang, query);
+    return Promise.all([
+        sdk.findPaginatedAmpsByLabel(lang, query),
+        sdk.findPaginatedVmpGroupsByLabel(lang, query),
+        sdk.findPaginatedNmpsByLabel(lang, query)
+        ])
   } catch (error) {
     console.error('Error searching medications:', error);
+    throw error;
   }
 }
 

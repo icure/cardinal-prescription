@@ -6,10 +6,12 @@
 
     export type MedicationType = {
         ampId?: string;
+        vmpGroupId?: string;
+        nmpId?: string;
         cnk?: string;
         dmppProductId?: string;
         id?: string;
-        title?: string;
+        title: string;
         activeIngredient?: string;
         price?: string;
         crmLink?: string;

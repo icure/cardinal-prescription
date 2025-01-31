@@ -236,6 +236,16 @@
         window.removeEventListener("mousemove", handleMouseMove);
     });
 
+    function validateSuggestion(suggestion: string) {
+        if (suggestion) {
+            const common = findCommonSequence(dosage ?? '', suggestion)
+            dosage = (dosage + (common.length ? suggestion.slice(common.length) : ' ' + suggestion)).replace(/ {2,}/g, ' ').replace(/\/ /g, '/')
+            dosageFromSuggestion = dosage
+            posologySuggestions = []
+            focusedDosageIndex = -1
+        }
+    }
+
     const handleKeyDown = (event: KeyboardEvent): void => {
         const defaultActions = () => {
             event.preventDefault(); // Prevent default scrolling behavior
@@ -256,14 +266,7 @@
             event.preventDefault();
             disableHover = false;
             const suggestion = posologySuggestions[focusedDosageIndex]
-
-            if (suggestion) {
-                const common = findCommonSequence(dosage ?? '', suggestion)
-                dosage = (dosage + (common.length ? suggestion.slice(common.length) : ' ' + suggestion)).replace(/ {2,}/g, ' ')
-                dosageFromSuggestion = dosage
-                posologySuggestions = []
-                focusedDosageIndex = -1
-            }
+            validateSuggestion(suggestion);
         } else if (event.key === 'Escape') {
             if (posologySuggestions.length) {
                 event.preventDefault()
@@ -328,8 +331,7 @@
                                         >
                                             <button onclick={ (e) => {
                                               e.preventDefault()
-                                              dosage = (dosage + ' ' + posologySuggestions[index]).replace(/ {2,}/g, ' ')
-                                                posologySuggestions = []
+                                              validateSuggestion(posologySuggestions[index])
                                             }}>
                                                 {posology}
                                             </button>
