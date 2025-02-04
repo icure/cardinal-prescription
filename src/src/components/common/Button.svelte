@@ -1,13 +1,26 @@
 <script lang='ts'>
-	let { title, handleClick, view, type='button', form }: { title: string, handleClick?: () => void, view: 'primary' | 'outlined', type?: 'button' | 'reset' | 'submit', form?:string } = $props();
+    import SpinnerBtn from "../../icons/SpinnerBtn.svelte";
+
+    let {title, handleClick, view, type = 'button', form, disabled = false}: {
+        title: string,
+        handleClick?: () => void,
+        view: 'primary' | 'busy' | 'outlined',
+        type?: 'button' | 'reset' | 'submit',
+        form?: string
+        disabled?: boolean
+    } = $props();
 </script>
 
-<button class={view} onclick={() => !!handleClick && handleClick()} {type} {form}>
-	{title}
+<button class={view} onclick={() => (!!handleClick && view !== 'busy') && handleClick()} {type} {form} {disabled}>
+    {#if view === 'busy'}
+        <SpinnerBtn/>
+    {:else}
+        {title}
+    {/if}
 </button>
 
 <style lang='scss'>
-	@use '../../../style/app';
+  @use '../../../style/app';
 
   button {
     display: flex;
@@ -22,12 +35,18 @@
     line-height: normal;
     border: 1px solid app.$burgundy-900;
     cursor: pointer;
+    min-width: 64px;
+
+    &[disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
 
     &.primary {
       background: app.$burgundy-900;
       color: #FFFFFF;
 
-      &:hover {
+      &:not([disabled]):hover {
         background: app.$burgundy-800;
         border-color: app.$burgundy-800;
       }
@@ -39,9 +58,16 @@
       background: app.$gray-100;
       color: app.$burgundy-900;
 
-      &:hover {
+      &:not([disabled]):hover {
         background: app.$gray-200;
       }
+    }
+
+    &.busy {
+      border-radius: 6px;
+      border-color: app.$gray-400;
+      background: app.$gray-100;
+      color: app.$burgundy-900;
     }
   }
 </style>

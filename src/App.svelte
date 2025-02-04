@@ -105,9 +105,9 @@
     let prescribedMedications: PrescribedMedicationType[] = $state([])
     let cache: Record<string, string> = $state({})
 
-    const handleSendPrescription = () => {
-        prescribedMedications.filter((m) => !m.rid).map((med, idx) => {
-            sendRecipe(
+    const handleSendPrescription = async () => {
+        await Promise.all(prescribedMedications.filter((m) => !m.rid).map(async (med) => {
+            const res = await sendRecipe(
                 samVersion!,
                 hcp,
                 patient,
@@ -117,16 +117,17 @@
                     put: (key: string, value: string) => Promise.resolve(cache[key] = value)
                 },
                 passphrase
-            ).then((res: Prescription[]) => {
-                prescribedMedications = prescribedMedications.map((item) => item.uuid === med.uuid ? {
-                    ...item,
-                    rid: res[0]?.rid
-                } : item)
-            })
-        })
+            )
+
+            prescribedMedications = prescribedMedications.map((item) => item.uuid === med.uuid ? {
+                ...item,
+                rid: res[0]?.rid
+            } : item)
+        }))
     }
 
-    const handlePrintPrescription = () => {
+    const handlePrintPrescription = async () => {
+        await handleSendPrescription()
         showPrintModal = true
     }
 

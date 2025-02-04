@@ -65,6 +65,7 @@
                 cnk: dmpp?.code,
                 dmppProductId: dmpp?.productId,
                 title: ampp.prescriptionName?.fr ?? ampp.abbreviatedName?.fr ?? amp.prescriptionName?.fr ?? amp.name?.fr ?? amp.abbreviatedName?.fr ?? '',
+                vmpTitle: amp.vmp?.name?.fr ?? '',
                 activeIngredient: amp.vmp?.vmpGroup?.name?.fr ?? '',
                 price: ampp?.exFactoryPrice ? `€${ampp.exFactoryPrice}` : '',
                 crmLink: ampp.crmLink?.fr,

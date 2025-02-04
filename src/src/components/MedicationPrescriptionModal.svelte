@@ -10,7 +10,7 @@
         MedicationType, PharmacistVisibility, PractitionerVisibility,
         PrescribedMedicationType
     } from "../types/index.svelte";
-    import {Duration, Medication} from '@icure/be-fhc-api'
+    import {Duration, Medication, Substanceproduct} from '@icure/be-fhc-api'
     import {Medicinalproduct} from "@icure/be-fhc-api/model/Medicinalproduct";
     import {Code} from "../utils/code-utils";
     import {completePosology} from "@icure/medication-sdk";
@@ -84,6 +84,9 @@
     let instructionsForReimbursement: string | undefined = $state(prescribedMedication?.medication?.instructionsForReimbursement ?? undefined);
     let practitionerVisibility: PractitionerVisibility = $state(prescribedMedication?.prescriberVisibility ?? practitionerVisibilityOptions[0]?.value);
     let pharmacistVisibility: PharmacistVisibility = $state(prescribedMedication?.pharmacistVisibility ?? pharmacistVisibilityOptions[0]?.value);
+
+    const isDci: boolean = prescribedMedication?.medication ? prescribedMedication.medication.substanceProduct : (!medicationToPrescribe?.ampId || medicationToPrescribe.genericPrescriptionRequired) && medicationToPrescribe?.vmpGroupId
+    const isMed: boolean = prescribedMedication?.medication ? prescribedMedication.medication.medicinalProduct : medicationToPrescribe?.ampId && !medicationToPrescribe.genericPrescriptionRequired
 
     let inputsToValidate: string[] = $state([]);
     let posologySuggestions: string[] = $state([]);
@@ -193,10 +196,20 @@
                 : Array.from({length: (data.prescriptionsNumber ?? 1)}, (_, i) => i).map((idx) => ({
                     uuid: uuid(),
                     medication: new Medication({
-                        medicinalProduct: new Medicinalproduct({
-                            samId: medicationToPrescribe!.dmppProductId,
-                            intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe!.cnk!)],
-                            intendedname: medicationToPrescribe!.intendedName
+                        ...( medicationToPrescribe?.ampId && !medicationToPrescribe.genericPrescriptionRequired ? {
+                            medicinalProduct: new Medicinalproduct({
+                                samId: medicationToPrescribe!.dmppProductId,
+                                intendedcds: [Code.from("CD-DRUG-CNK", medicationToPrescribe!.cnk!)],
+                                intendedname: medicationToPrescribe!.intendedName
+                            })
+                        } : (medicationToPrescribe?.vmpGroupId) ? {
+                            substanceProduct: new Substanceproduct({
+                                samId: medicationToPrescribe!.vmpGroupId,
+                                intendedcds: [Code.from("CD_VMPGROUP", medicationToPrescribe!.vmpGroupId!)],
+                                intendedname: medicationToPrescribe?.vmpTitle ?? medicationToPrescribe!.title
+                            })
+                        } : {
+                            compoundPrescription: medicationToPrescribe!.title
                         }),
                         beginMoment: offsetDate(parseInt((data.treatmentStartDate as string).replace(/-/g, '')), data.periodicityTimeUnit ? parseInt(data.periodicityTimeUnit) * (data.periodicityDaysNumber ?? 1) * idx : 0),
                         endMoment: offsetDate(parseInt((data.executableUntil as string).replace(/-/g, '')), data.periodicityTimeUnit ? parseInt(data.periodicityTimeUnit) * (data.periodicityDaysNumber ?? 1) * idx : 0),
@@ -312,7 +325,7 @@
             >
                 <div class='addMedicationForm__body__content'>
                     <div class='addMedicationForm__body__content__inputs'>
-                        <Input label='Nom groupe DCI' value={medicationTitle} required
+                        <Input label={isDci ? 'Nom du groupe DCI' : isMed ? 'Nom du médicament' : 'Nom de la spécialité'} value={medicationTitle} required
                                disabled
                                id='drugName'/>
                         <div class="dosageInput">

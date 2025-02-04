@@ -1,21 +1,38 @@
 <script lang="ts">
     import PrescriptionRow from "./PrescriptionRow.svelte";
     import Button from "./common/Button.svelte";
-  import type {PrescribedMedicationType } from "../types/index.svelte";
+    import type {PrescribedMedicationType} from "../types/index.svelte";
 
-  let {
-    handleModifyPrescription,
-    handleDeletePrescription,
-    handleSendPrescription,
-    handlePrintPrescription,
-    prescribedMedications
-  }: {
-    handleModifyPrescription: (medication: PrescribedMedicationType) => void,
-    handleDeletePrescription: (medication: PrescribedMedicationType) => void,
-    prescribedMedications: PrescribedMedicationType[]
-    handleSendPrescription: () => void
-    handlePrintPrescription: () => void
-  } = $props()
+    let {
+        handleModifyPrescription,
+        handleDeletePrescription,
+        handleSendPrescription,
+        handlePrintPrescription,
+        prescribedMedications
+    }: {
+        handleModifyPrescription: (medication: PrescribedMedicationType) => void,
+        handleDeletePrescription: (medication: PrescribedMedicationType) => void,
+        prescribedMedications: PrescribedMedicationType[]
+        handleSendPrescription: () => Promise<void>
+        handlePrintPrescription: () => Promise<void>
+    } = $props()
+
+    let printing = $state(false);
+    let sending = $state(false);
+
+    const spinPrint = (action: () => Promise<void>) => {
+        printing = true;
+        action().finally(() => {
+            printing = false;
+        });
+    }
+
+    const spinSend = (action: () => Promise<void>) => {
+        sending = true;
+        action().finally(() => {
+            sending = false;
+        });
+    }
 </script>
 
 {#if prescribedMedications}
@@ -28,9 +45,10 @@
             {/each}
         </div>
         <div class='prescriptions__footer'>
-            <Button title='Print' handleClick={() => handlePrintPrescription()} view='outlined' type='reset'
+            <Button disabled={sending} title='Print' handleClick={() => spinPrint(handlePrintPrescription)} view={printing?'busy':'outlined'} type='submit'
                     form="prescriptionForm"/>
-            <Button title='Send' view='primary' type='submit' handleClick={() => handleSendPrescription()}
+            <Button disabled={printing} title='Send' view={sending?'busy':'primary'} type='submit'
+                    handleClick={() => spinSend(handleSendPrescription)}
                     form="prescriptionForm"/>
         </div>
     </div>

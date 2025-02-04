@@ -24,7 +24,7 @@
         <div class='header__prescription'>
             <div class='header__prescription__content'>
                 <div class='header__prescription__content__title'>
-                    <h3>{prescribedMedication.medication.medicinalProduct?.intendedname}</h3>
+                    <h3>{prescribedMedication.medication.medicinalProduct?.intendedname ?? prescribedMedication.medication.substanceProduct?.intendedname ?? prescribedMedication.medication.compoundPrescription}</h3>
                 </div>
                 <p>{prescribedMedication.medication.instructionForPatient}</p>
             </div>

@@ -224,7 +224,6 @@ export const makePrescriptionRequest = (samVersion: string, prescriber: Prescrib
         nihii: prescriber.nihii,
         addresses: prescriber.addresses,
     },
-    prescriptionType: "P0",
     feedback: false,
     vendorName: vendor.vendorName,
     vendorEmail: vendor.vendorEmail,
@@ -250,7 +249,7 @@ export const sendRecipe = async (samVersion: string, prescriber: Prescriber, pat
         throw new Error("Cannot obtain keystore")
     }
 
-    const url = "https://fhcacc.icure.cloud"
+    const url = "https://fhcad.taktik.to" //"https://fhcacc.icure.cloud"
 
     const sts = new fhcStsApi(url, [])
     const recipe = new fhcRecipeApi(url, [])

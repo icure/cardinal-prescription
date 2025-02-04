@@ -12,6 +12,7 @@
         dmppProductId?: string;
         id?: string;
         title: string;
+        vmpTitle?: string;
         activeIngredient?: string;
         price?: string;
         crmLink?: string;

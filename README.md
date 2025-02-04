@@ -8,3 +8,10 @@ and generate prescription with structured and unstructured posology.
 This module interacts with Recip-e to send the prescription.
 
 You'll need to pass the SAM and Recip-e certification to use this module in production.
+
+## Modules
+
+- Save, retrieve while encrypting/decrypting E-health certificate : `CertificateUpload`
+- Search in SAM (AMPPs, VMP groups, NMPs, ...) : `PrescribedMedicationsSearch`
+- Generate prescription with structured and unstructured posology : `MedicationPrescriptionModal`
+- Display generated prescriptions. Generate, send and print prescriptions to Recip-e : `Prescriptions`
