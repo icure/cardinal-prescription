@@ -353,7 +353,7 @@
 
     &__dropdown {
       width: 100%;
-      height: 800px;
+      height: 400px;
       overflow-y: scroll;
       display: flex;
       flex-direction: column;
