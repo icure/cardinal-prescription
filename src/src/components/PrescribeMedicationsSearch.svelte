@@ -44,10 +44,10 @@
     let moleculesPage: MedicationType[] = $state([]);
     let productsPage: MedicationType[] = $state([]);
 
-    let {deliveryEnvironment, handleAddPrescription, isMedicationPrescriptionModalOpen}: {
+    let {deliveryEnvironment, handleAddPrescription, disableInputEventsTracking}: {
         deliveryEnvironment: string,
         handleAddPrescription: (medication: MedicationType) => void
-        isMedicationPrescriptionModalOpen: boolean
+        disableInputEventsTracking: boolean
     } = $props()
 
     async function loadMedicationsPage(medications: PaginatedListIterator<Amp>, min: number, acc: MedicationType[] = []): Promise<MedicationType[]> {
@@ -189,7 +189,7 @@
 
     function handleKeyDown(event: KeyboardEvent): void {
 
-        if (isMedicationPrescriptionModalOpen) return;
+        if (disableInputEventsTracking) return;
 
         const defaultActions = () => {
             event.preventDefault(); // Prevent default scrolling behavior
@@ -218,7 +218,7 @@
     }
 
     function handleMouseMove() {
-        if (!isMedicationPrescriptionModalOpen) disableHover = false; // Re-enable hover on mouse movement
+        if (!disableInputEventsTracking) disableHover = false; // Re-enable hover on mouse movement
     }
 </script>
 

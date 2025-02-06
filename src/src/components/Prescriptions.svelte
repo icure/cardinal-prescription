@@ -6,15 +6,15 @@
     let {
         handleModifyPrescription,
         handleDeletePrescription,
-        handleSendPrescription,
-        handlePrintPrescription,
+        handleSendPrescriptions,
+        handlePrintPrescriptions,
         prescribedMedications
     }: {
         handleModifyPrescription: (medication: PrescribedMedicationType) => void,
         handleDeletePrescription: (medication: PrescribedMedicationType) => void,
         prescribedMedications: PrescribedMedicationType[]
-        handleSendPrescription: () => Promise<void>
-        handlePrintPrescription: () => Promise<void>
+        handleSendPrescriptions: () => Promise<void>
+        handlePrintPrescriptions: () => Promise<void>
     } = $props()
 
     let printing = $state(false);
@@ -45,10 +45,10 @@
             {/each}
         </div>
         <div class='prescriptions__footer'>
-            <Button disabled={sending} title='Print' handleClick={() => spinPrint(handlePrintPrescription)} view={printing?'busy':'outlined'} type='submit'
+            <Button disabled={sending} title='Print' handleClick={() => spinPrint(handlePrintPrescriptions)} view={printing?'busy':'outlined'} type='submit'
                     form="prescriptionForm"/>
             <Button disabled={printing} title='Send' view={sending?'busy':'primary'} type='submit'
-                    handleClick={() => spinSend(handleSendPrescription)}
+                    handleClick={() => spinSend(handleSendPrescriptions)}
                     form="prescriptionForm"/>
         </div>
     </div>

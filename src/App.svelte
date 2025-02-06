@@ -105,7 +105,7 @@
     let prescribedMedications: PrescribedMedicationType[] = $state([])
     let cache: Record<string, string> = $state({})
 
-    const handleSendPrescription = async () => {
+    const handleSendPrescriptions = async () => {
         await Promise.all(prescribedMedications.filter((m) => !m.rid).map(async (med) => {
             const res = await sendRecipe(
                 samVersion!,
@@ -126,8 +126,8 @@
         }))
     }
 
-    const handlePrintPrescription = async () => {
-        await handleSendPrescription()
+    const handlePrintPrescriptions = async () => {
+        await handleSendPrescriptions()
         showPrintModal = true
     }
 
@@ -162,7 +162,7 @@
         {/if}
         <p>Sam version: {samVersion}</p>
         <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}
-                                    isMedicationPrescriptionModalOpen={showMedicationPrescriptionModal}/>
+                                    disableInputEventsTracking={showMedicationPrescriptionModal}/>
 
         {#if !!medicationToPrescribe && showMedicationPrescriptionModal}
             <MedicationPrescriptionModal
@@ -195,7 +195,7 @@
         {/if}
         {#if prescribedMedications.length !== 0}
             <Prescriptions {handleDeletePrescription} {handleModifyPrescription}
-                           {prescribedMedications} {handleSendPrescription} {handlePrintPrescription}/>
+                           {prescribedMedications} {handleSendPrescriptions} {handlePrintPrescriptions}/>
         {/if}
         {#if showPrintModal}
             <PrescriptionPrintModal {prescribedMedications} prescriber={hcp} {patient} closeModal={closePrintModal}/>
