@@ -30,9 +30,14 @@ You'll need t- pass the SAM and Recip-e certification t- use this module in prod
 ### PrescribedMedicationsSearch
 
 ```sveltehtml
-<PrescribeMedicationsSearch deliveryEnvironment="P" {(medication: MedicationType) => {
-    // T- be passed t- the MedicationPrescriptionModal
-}} disableInputEventsTracking={medicationPrescriptionModalIsDisplayed}/>
+
+<PrescribeMedicationsSearch
+        deliveryEnvironment="P" {(medication: MedicationType) => {
+            // T- be passed t- the MedicationPrescriptionModal
+        }}
+        disableInputEventsTracking={medicationPrescriptionModalIsDisplayed}
+        short={true || false}
+/>
 ```
 
 The values t- be used for deliveryEnvironment are:
@@ -145,3 +150,11 @@ The information has t- be shown in a clear, proactive way next t- the concerned 
       - Fa = life saving medicines with a reimbursement base composed of a fixed amount
       - Fb = therapeutically important medicines with a reimbursement base composed of a fixed amount
     - Extra reimbursement for the contraception for young women (R.D. 16-09- 2013)
+
+### Example of display of the new requirements
+
+#### Collapsed
+![sc1.png](sc1.png)
+
+#### Expanded
+![sc2.png](sc2.png)

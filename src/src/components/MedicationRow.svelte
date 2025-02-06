@@ -503,6 +503,12 @@
                         (DHPC)</a>
                 {/if}
             </div>
+            <div class="content__divider"></div>
+            {@render prescriptionConditionsContent()}
+
+            <div class="content__divider"></div>
+            {@render deliveryConditionsContent()}
+
             {#if medication.supplyProblems}
                 <div class="content__divider"></div>
                 {@render supplyProblemsContent()}
@@ -516,13 +522,6 @@
                 {@render startOfCommercialisationContent()}
             {/if}
 
-
-            <div class="content__divider"></div>
-            {@render deliveryConditionsContent()}
-
-
-            <div class="content__divider"></div>
-            {@render prescriptionConditionsContent()}
 
 
         </div>
