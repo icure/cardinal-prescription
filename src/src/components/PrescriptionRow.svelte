@@ -1,21 +1,21 @@
 <script lang='ts'>
-    import {DeleteIcn, EditIcn} from '../icons/index.svelte';
-    import type {PrescribedMedicationType} from "../types/index.svelte";
+  import {DeleteIcn, EditIcn} from '../icons/index.svelte';
+  import type {PrescribedMedicationType} from "../types/index.svelte";
 
-    let {prescribedMedication, handleModifyPrescription, handleDeletePrescription}: {
-        prescribedMedication: PrescribedMedicationType,
-        handleModifyPrescription: (medication: PrescribedMedicationType) => void
-        handleDeletePrescription: (medication: PrescribedMedicationType) => void
-    } = $props();
+  let {prescribedMedication, handleModifyPrescription, handleDeletePrescription}: {
+    prescribedMedication: PrescribedMedicationType,
+    handleModifyPrescription: (medication: PrescribedMedicationType) => void
+    handleDeletePrescription: (medication: PrescribedMedicationType) => void
+  } = $props();
 
-    const colors = {
-        red: 'red',
-        blue: '#3D87C5',
-        gray: '#383A3C'
-    }
+  const colors = {
+    red: 'red',
+    blue: '#3D87C5',
+    gray: '#383A3C'
+  }
 
-    let editIcnColor = $state(colors.gray)
-    let deleteIcnColor = $state(colors.gray)
+  let editIcnColor = $state(colors.gray)
+  let deleteIcnColor = $state(colors.gray)
 
 </script>
 
@@ -66,8 +66,8 @@
     padding: 8px 12px;
     gap: 12px;
     border-radius: 6px;
-    background: #FFF;
-    border: 1px solid app.$blue-200;
+    background: app.$blue-200;
+    border: 1px solid app.$blue-100;
 
     &:hover {
       border-radius: 6px;
@@ -167,8 +167,8 @@
         @include app.media-breakpoint-down(app.$sm) {
           width: 32px;
           height: 32px;
-          border: 1px solid app.$blue-400;
-          background: rgba(app.$blue-400, 0.3);
+          border: 1px solid app.$blue-300;
+          background: rgba(app.$blue-300, 0.3);
           border-radius: 6px;
         }
       }

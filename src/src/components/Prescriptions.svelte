@@ -1,7 +1,7 @@
 <script lang="ts">
-    import PrescriptionRow from "./PrescriptionRow.svelte";
-    import Button from "./common/Button.svelte";
-  import type {PrescribedMedicationType } from "../types/index.svelte";
+  import PrescriptionRow from "./PrescriptionRow.svelte";
+  import Button from "./common/Button.svelte";
+  import type {PrescribedMedicationType} from "../types/index.svelte";
 
   let {
     handleModifyPrescription,
@@ -42,14 +42,24 @@
   .prescriptions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    width: 700px;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid app.$gray-300;
+    gap: 4px;
+    width: 50%;
+    min-width: 700px;
 
     @include app.media-breakpoint-down(app.$md) {
       width: 100%;
+      min-width: 100%;
+    }
+
+    &__title {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: app.$gray-800;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: 22px; /* 157.143% */
     }
 
     &__rows {
@@ -65,16 +75,18 @@
       padding: 6px;
       padding-right: 8px;
       gap: 5px;
+      border-radius: 8px;
+      border: 1px solid app.$gray-300;
+      background: white;
     }
 
     &__footer {
       display: flex;
-      padding: 12px;
       justify-content: flex-start;
       align-items: flex-start;
       gap: 12px;
       align-self: stretch;
-      border-top: 1px solid app.$gray-300;
+      //border-top: 1px solid app.$gray-300;
       background: #FFF;
     }
   }
