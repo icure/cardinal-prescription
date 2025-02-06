@@ -1,56 +1,56 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
-    import Button from "./common/Button.svelte";
-    import Input from "./common/Input.svelte";
-    import {openCertificatesDatabase, uploadAndEncrypt} from "../../lib/fhc";
+  import {onMount} from 'svelte';
+  import Button from "./common/Button.svelte";
+  import Input from "./common/Input.svelte";
+  import {openCertificatesDatabase, uploadAndEncrypt} from "../../lib/fhc";
 
-    let { handleSave }: {
-        handleSave: (id: string, passphrase: string) => void
-    } = $props();
+  let {handleSave}: {
+    handleSave: (id: string, passphrase: string) => void
+  } = $props();
 
-    let password: string = '';
-    let certificateFile: File | null = null;
+  let password: string = '';
+  let certificateFile: File | null = null;
 
-    let db: IDBDatabase | undefined;
+  let db: IDBDatabase | undefined;
 
-    // Initialize IndexedDB
-    onMount(() => {
-        openCertificatesDatabase().then((database) => {
-            db = database;
-        });
+  // Initialize IndexedDB
+  onMount(() => {
+    openCertificatesDatabase().then((database) => {
+      db = database;
     });
+  });
 
-    async function handleFormSubmit(event: Event): Promise<void> {
-        event.preventDefault();
+  async function handleFormSubmit(event: Event): Promise<void> {
+    event.preventDefault();
 
-        if (!db) {
-            alert('Database not initialized');
-            return;
-        }
-
-        if (!certificateFile || !password) {
-            alert('Please upload a certificate and set a password.');
-            return;
-        }
-
-        const certificateData = await readFileAsArrayBuffer(certificateFile);
-        const id = await uploadAndEncrypt(db, certificateFile.name.split('=')[1].split(' ')[0], password, certificateData);
-        handleSave(id, password);
+    if (!db) {
+      alert('Database not initialized');
+      return;
     }
 
-    function handleFileChange(event: Event): void {
-        const target = event.target as HTMLInputElement;
-        certificateFile = target.files ? target.files[0] : null;
+    if (!certificateFile || !password) {
+      alert('Please upload a certificate and set a password.');
+      return;
     }
 
-    function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as ArrayBuffer);
-            reader.onerror = () => reject(reader.error);
-            reader.readAsArrayBuffer(file);
-        });
-    }
+    const certificateData = await readFileAsArrayBuffer(certificateFile);
+    const id = await uploadAndEncrypt(db, certificateFile.name.split('=')[1].split(' ')[0], password, certificateData);
+    handleSave(id, password);
+  }
+
+  function handleFileChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    certificateFile = target.files ? target.files[0] : null;
+  }
+
+  function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  }
 </script>
 
 <style lang="scss">
@@ -60,7 +60,13 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    width: 700px;
+    width: 50%;
+    min-width: 700px;
+
+    @include app.media-breakpoint-down(app.$md) {
+      width: 100%;
+      min-width: 100%;
+    }
   }
 
   input {
@@ -84,7 +90,8 @@
 
 <form on:submit|preventDefault={handleFormSubmit}>
     <div>
-        <Input label="Upload Certificate" type="file" id="certificate" accept=".p12,.acc-p12" onchange={handleFileChange} required/>
+        <Input label="Upload Certificate" type="file" id="certificate" accept=".p12,.acc-p12"
+               onchange={handleFileChange} required/>
     </div>
     <div>
         <Input label="Certificate Password" type="password" id="password" bind:value={password} required/>

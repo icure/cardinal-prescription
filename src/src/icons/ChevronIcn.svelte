@@ -1,5 +1,5 @@
 <script lang='ts'>
-  let {pathFill = 'rgba(81,31,58,0.5)', size = 12}: { pathFill?: string, size?: number } = $props();
+  let {pathFill = '#3D87C5', size = 12}: { pathFill?: string, size?: number } = $props();
   const sizePx = $derived(`${size}px`);
 </script>
 

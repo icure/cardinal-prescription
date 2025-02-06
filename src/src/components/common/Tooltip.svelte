@@ -1,8 +1,9 @@
 <script lang='ts'>
   import type {Snippet} from 'svelte';
 
-  let {content, iconSnippet, orientation = 'tr'}: {
-    content: string,
+  let {content, contentSnippet, iconSnippet, orientation = 'tr'}: {
+    content?: string,
+    contentSnippet?: Snippet,
     iconSnippet: Snippet,
     orientation?: 'tr' | 'br' | 'tl' | 'bl'
   } = $props();
@@ -16,18 +17,36 @@
     <div class='icon'>
         {@render iconSnippet()}
     </div>
+    <div class="chevron"></div>
     <div class='popup'>
         <div class='popup__iconWrap'>
             <div class='popup__icon'>
                 {@render iconSnippet()}
             </div>
         </div>
-        <p>{content}</p>
+        {#if !!content}
+            <p>{content}</p>
+        {/if}
+        {#if !!contentSnippet}
+            {@render contentSnippet()}
+        {/if}
     </div>
 </div>
 
 <style lang='scss'>
   @use '../../../style/app';
+
+  :global(.snippetLink) {
+    color: app.$blue-900;
+    font-size: 14px !important;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 
   .tooltip {
     display: flex;
@@ -44,29 +63,47 @@
       border-right: 7px solid transparent;
     }
 
-    &.tr:hover,
-    &.tl:hover {
-      &::before {
+    &.tr,
+    &.tl {
+      .chevron {
+        display: none;
         @include tooltipArrow;
-        border-top: 7px solid app.$burgundy-900;
-
+        border-top: 7px solid app.$blue-900;
+        //width: 100%;
         position: absolute;
-        bottom: 25px;
+        bottom: 23px;
         left: 50%;
         transform: translate(-50%, 0);
       }
     }
 
-    &.br:hover,
-    &.bl:hover {
-      &::before {
+    &.br,
+    &.bl {
+      .chevron {
+        display: none;
         @include tooltipArrow;
-        border-bottom: 7px solid app.$burgundy-900;
-
+        border-bottom: 7px solid app.$blue-900;
+        //width: 100%;
         position: absolute;
-        bottom: -10px;
+        bottom: -8px;
         left: 50%;
         transform: translate(-50%, 0);
+      }
+    }
+
+    &.tr, &.br {
+      .chevron {
+        right: 50%;
+      }
+    }
+
+
+    &.tr:hover,
+    &.tl:hover,
+    &.br:hover,
+    &.bl:hover {
+      .chevron {
+        display: flex;
       }
     }
 
@@ -83,7 +120,8 @@
       position: absolute;
       z-index: 15;
       min-height: 32px;
-      width: 230px;
+      width: auto;
+      min-width: 300px;
       padding: 8px;
       flex-direction: column;
       justify-content: center;
@@ -91,7 +129,7 @@
       gap: 6px;
       align-self: stretch;
       border-radius: 6px;
-      border: 1px solid app.$burgundy-900;
+      border: 1px solid app.$blue-900;
       background: #FFF;
 
       &__iconWrap {
@@ -110,7 +148,7 @@
         justify-content: center;
         align-items: center;
         border-radius: 16px;
-        background: rgba(app.$orange-500, 0.26);
+        //background: rgba(app.$orange-500, 0.26);
       }
 
       p {
@@ -122,26 +160,28 @@
       }
     }
 
-    &.tr .popup {
-      bottom: 30px;
-      left: -12px;
+    &.tr, &.tl {
+      .popup {
+        bottom: 28px;
+      }
     }
 
-    &.tl .popup {
-      bottom: 30px;
-      right: -12px;
+    &.br, &.bl {
+      .popup {
+        top: 30px;
+      }
     }
 
-    &.br .popup {
-      top: 32px;
-      left: -12px;
-
+    &.tl, &.bl {
+      .popup {
+        left: -12px;
+      }
     }
 
-    &.bl .popup {
-      top: 32px;
-      right: -12px;
-
+    &.tr, &.br {
+      .popup {
+        right: -12px;
+      }
     }
 
     &.active {
