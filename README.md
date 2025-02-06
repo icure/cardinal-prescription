@@ -110,7 +110,7 @@ The information has t- be shown in a clear, proactive way next t- the concerned 
    - presumed end date supply problem,
    - reason supply problem,
    - impact supply problem,
-   • if the impact is ‘import possible by the pharmacist’ (NL: Invoer door de apotheker mogelijk; FR: Importation possible par le pharmacien), a link t- the blank document ‘declaration of the prescriber’ (and available from the FAGG Website), must be made available for printing and filling by the GP at the moment of making/ validating the prescription:
+   • if the impact is ‘import possible by the pharmacist’ (NL: Invoer door de apotheker mogelijk; FR: Importation possible par le pharmacien), a link to the blank document ‘declaration of the prescriber’ (and available from the FAGG Website), must be made available for printing and filling by the GP at the moment of making/ validating the prescription:
    - NL:https://www.faggafmps.be/sites/default/files/content/INSP/NARC/artsenverkla ring.pdf
    - FR:https://www.afmps.be/sites/default/files/content/INSP/N ARC/declaration-medecin.pdf
    - additional information concerning alternative medicinal products or treatments.
@@ -158,3 +158,27 @@ The information has t- be shown in a clear, proactive way next t- the concerned 
 
 #### Expanded
 ![sc2.png](sc2.png)
+
+### Medications of interest for tests
+
+#### Temporarily unavailable
+Polydexa 10 mg/ml
+Mimpara 60 mg
+Fiasp 100
+
+#### Test link to the blank document ‘declaration of the prescriber’
+Cisplatine 
+
+#### End of commercialisation
+Antigriphin
+
+#### Commercialisation and supply problems
+Crestor
+
+#### Start of commercialisation in the future
+Kaftrio (black triangle)
+increlex (black, orange triangle)
+
+
+
+
