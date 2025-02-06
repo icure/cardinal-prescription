@@ -167,7 +167,7 @@
 
         <p>Sam version: {samVersion}</p>
         <div class="divider"></div>
-        <PrescribeMedicationsSearch deliveryEnvironment="P" {handleAddPrescription}
+        <PrescribeMedicationsSearch deliveryEnvironment="P" short={true} {handleAddPrescription}
                                     disableInputEventsTracking={showMedicationPrescriptionModal}/>
 
         {#if !!medicationToPrescribe && showMedicationPrescriptionModal}

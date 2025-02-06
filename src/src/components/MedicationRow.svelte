@@ -1,59 +1,60 @@
 <script lang='ts'>
-  import type {MedicationType} from '../types/index.svelte';
-  import {
-    BlackTriangleIcn,
-    ChevronIcn,
-    EndOfCommercialisationIcn,
-    LeafIcn,
-    MoleculeIcn,
-    PillsBottleIcn,
-    PrescriptionIcn,
-    SolidPillIcn,
-    StartOfCommercialisationIcn,
-    SupplyIcn
-  } from '../icons/index.svelte';
-  import {onMount} from "svelte";
-  import Tooltip from "./common/Tooltip.svelte";
-  import {formatTimestamp} from "../utils/timestampHelpers";
-  import {Commercialization, SupplyProblem} from "@icure/cardinal-be-sam";
-  import {deliveryModusSpecificationCodes} from '../helpers/index.svelte'
+    import type {MedicationType} from '../types/index.svelte';
+    import {
+        BlackTriangleIcn,
+        ChevronIcn,
+        EndOfCommercialisationIcn,
+        LeafIcn,
+        MoleculeIcn,
+        PillsBottleIcn,
+        PrescriptionIcn,
+        SolidPillIcn,
+        StartOfCommercialisationIcn,
+        SupplyIcn
+    } from '../icons/index.svelte';
+    import {onMount} from "svelte";
+    import Tooltip from "./common/Tooltip.svelte";
+    import {formatTimestamp} from "../utils/timestampHelpers";
+    import {Commercialization, SupplyProblem} from "@icure/cardinal-be-sam";
+    import {deliveryModusSpecificationCodes} from '../helpers/index.svelte'
 
 
-  let {medication, handleAddPrescription, id, focused, disableHover}: {
-    medication: MedicationType,
-    handleAddPrescription: (medication: MedicationType) => void
-    id: string
-    focused?: boolean
-    disableHover?: boolean
-  } = $props();
+    let {medication, handleAddPrescription, id, focused, disableHover, short}: {
+        medication: MedicationType,
+        handleAddPrescription: (medication: MedicationType) => void
+        id: string
+        focused?: boolean
+        disableHover?: boolean
+        short?: boolean
+    } = $props();
 
-  let child: HTMLElement;
-  let distanceToParentTop: number = $state(0);
-  let isExpanded: boolean = $state(false)
-  let showChevron: boolean = !!medication.crmLink || !!medication.patientInformationLeafletLink || !!medication.rmaProfessionalLink || !!medication.spcLink || !!medication.dhpcLink;
+    let child: HTMLElement;
+    let distanceToParentTop: number = $state(0);
+    let isExpanded: boolean = $state(false)
+    let showChevron: boolean = !!medication.crmLink || !!medication.patientInformationLeafletLink || !!medication.rmaProfessionalLink || !!medication.spcLink || !!medication.dhpcLink;
 
-  onMount(() => {
-    const parentTop = child.parentElement?.getBoundingClientRect();
-    const childTop = child.getBoundingClientRect();
-    distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
-  });
+    onMount(() => {
+        const parentTop = child.parentElement?.getBoundingClientRect();
+        const childTop = child.getBoundingClientRect();
+        distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
+    });
 
-  const getSpecialRegulation = (code: number) => {
-    switch (code) {
-      case 1:
-        return 'No narcotic, specially regulated drug'
-      case 2:
-        return 'Narcotic, specially regulated drug'
-      default:
-        return 'No special regulation'
+    const getSpecialRegulation = (code: number) => {
+        switch (code) {
+            case 1:
+                return 'No narcotic, specially regulated drug'
+            case 2:
+                return 'Narcotic, specially regulated drug'
+            default:
+                return 'No special regulation'
+        }
     }
-  }
 
-  const medicationComercialization: Commercialization | undefined = medication.commercializations?.[0]
-  const medicationSupplyProblems: SupplyProblem | undefined = medication.supplyProblems?.[0]
+    const medicationComercialization: Commercialization | undefined = medication.commercializations?.[0]
+    const medicationSupplyProblems: SupplyProblem | undefined = medication.supplyProblems?.[0]
 
-  // console.log(medication.reimbursements)
-  console.log(medication.reimbursements)
+    // console.log(medication.reimbursements)
+    console.log(medication.reimbursements)
 
 </script>
 
@@ -418,44 +419,44 @@
                     </div>
                     <p class='header__medication__content__heading__activeIngredient'>{medication.activeIngredient}</p>
                 </div>
-                <div class='header__medication__content__description'>
-                    <div class='header__medication__content__description__item price'>
-                        <span>Prix:</span>
-                        <p>{medication.price}</p>
+                {#if medication.price}
+                    <div class='header__medication__content__description'>
+                        <div class='header__medication__content__description__item price'>
+                            <span>Prix:</span>
+                            <p>{medication.price}</p>
+                        </div>
                     </div>
-                    <div class='header__medication__content__description__item reimbursement'>
-                        <span>Remboursement:</span>
-                        <p>Non</p>
-                    </div>
-                </div>
-                <div class='header__medication__content__description'>
-                    <div class='header__medication__content__description__item delivery'>
-                        <span>Conditions de livraison:</span>
-                        {#if medication.deliveryModusCode }
-                            {#if !!medication.deliveryModusSpecification}
-                                <p>{medication.deliveryModus} / {medication.deliveryModusSpecification}</p>
+                {/if}
+                {#if isExpanded || !short}
+                    <div class='header__medication__content__description'>
+                        <div class='header__medication__content__description__item delivery'>
+                            <span>Conditions de livraison:</span>
+                            {#if medication.deliveryModusCode }
+                                {#if !!medication.deliveryModusSpecification}
+                                    <p>{medication.deliveryModus} / {medication.deliveryModusSpecification}</p>
+                                {:else}
+                                    <p>{medication.deliveryModus}</p>
+                                {/if}
                             {:else}
-                                <p>{medication.deliveryModus}</p>
+                                <div class="textToIcon textToIcon--green">
+                                    <p>Free of prescription</p>
+                                </div>
                             {/if}
-                        {:else}
-                            <div class="textToIcon textToIcon--green">
-                                <p>Free of prescription</p>
-                            </div>
-                        {/if}
+                        </div>
                     </div>
-                </div>
-                <div class='header__medication__content__description'>
-                    <div class='header__medication__content__description__item prescription'>
-                        <span>Conditions de prescription:</span>
-                        {#if medication.deliveryModusSpecificationCode && medication.deliveryModusSpecificationCode in deliveryModusSpecificationCodes}
-                            <p>{deliveryModusSpecificationCodes[medication.deliveryModusSpecificationCode].fr}</p>
-                        {:else}
-                            <div class="textToIcon textToIcon--green">
-                                <p>Not applicable</p>
-                            </div>
-                        {/if}
+                    <div class='header__medication__content__description'>
+                        <div class='header__medication__content__description__item prescription'>
+                            <span>Conditions de prescription:</span>
+                            {#if medication.deliveryModusSpecificationCode && medication.deliveryModusSpecificationCode in deliveryModusSpecificationCodes}
+                                <p>{deliveryModusSpecificationCodes[medication.deliveryModusSpecificationCode].fr}</p>
+                            {:else}
+                                <div class="textToIcon textToIcon--green">
+                                    <p>Not applicable</p>
+                                </div>
+                            {/if}
+                        </div>
                     </div>
-                </div>
+                {/if}
             </div>
         </div>
         {#if showChevron}
@@ -467,20 +468,22 @@
 
     {#if isExpanded}
         <div class='content'>
-            <div class='content__vmp'>
-                {#if !!medication.vmp.name?.fr}
-                    <div class='content__vmp__item'>
-                        <span>VMP:</span>
-                        <p>{medication.vmp.name?.fr}</p>
-                    </div>
-                {/if}
-                {#if !!medication.vmp.vmpGroup?.name?.fr}
-                    <div class='content__vmp__item'>
-                        <span>VMP-group:</span>
-                        <p>{medication.vmp.vmpGroup.name.fr}</p>
-                    </div>
-                {/if}
-            </div>
+            {#if !!medication.vmp}
+                <div class='content__vmp'>
+                    {#if !!medication.vmp.name?.fr}
+                        <div class='content__vmp__item'>
+                            <span>VMP:</span>
+                            <p>{medication.vmp.name?.fr}</p>
+                        </div>
+                    {/if}
+                    {#if !!medication.vmp.vmpGroup?.name?.fr}
+                        <div class='content__vmp__item'>
+                            <span>VMP-group:</span>
+                            <p>{medication.vmp.vmpGroup.name.fr}</p>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
             <div class="content__divider"></div>
             <div class='content__links'>
                 {#if !!medication.crmLink}

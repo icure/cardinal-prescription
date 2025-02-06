@@ -13,7 +13,7 @@
     dmppProductId?: string;
     id?: string;
     title: string;
-        vmpTitle?: string;
+    vmpTitle?: string;
     activeIngredient?: string;
     price?: string;
     crmLink?: string;
@@ -26,7 +26,7 @@
     spcLink?: string;
     dhpcLink?: string;
     rmakeyMessages?: string;
-    vmp: VmpStub;
+    vmp?: VmpStub;
     supplyProblems?: SupplyProblem[]
     commercializations?: Commercialization[]
     deliveryModusCode?: string;
