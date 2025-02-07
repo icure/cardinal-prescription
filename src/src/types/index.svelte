@@ -33,7 +33,7 @@
     deliveryModus?: string;
     deliveryModusSpecificationCode?: 'Sp' | 'Sp1' | "Sp/S" | "Sp1/S" | 'IMP/Sp' | 'IMP/Sp1';
     deliveryModusSpecification?: string;
-    reimbursements?: Reimbursement[]
+    reimbursements?: Reimbursement
   };
 
   export type PrescribedMedicationType = {
