@@ -1,60 +1,60 @@
 <script lang='ts'>
-    import type {MedicationType} from '../types/index.svelte';
-    import {
-        BlackTriangleIcn,
-        ChevronIcn,
-        EndOfCommercialisationIcn,
-        LeafIcn,
-        MoleculeIcn,
-        PillsBottleIcn,
-        PrescriptionIcn,
-        SolidPillIcn,
-        StartOfCommercialisationIcn,
-        SupplyIcn
-    } from '../icons/index.svelte';
-    import {onMount} from "svelte";
-    import Tooltip from "./common/Tooltip.svelte";
-    import {formatTimestamp} from "../utils/timestampHelpers";
-    import {Commercialization, SupplyProblem} from "@icure/cardinal-be-sam";
-    import {deliveryModusSpecificationCodes} from '../helpers/index.svelte'
+  import type {MedicationType} from '../types/index.svelte';
+  import {
+    BlackTriangleIcn,
+    ChevronIcn,
+    EndOfCommercialisationIcn,
+    LeafIcn,
+    MoleculeIcn,
+    PillsBottleIcn,
+    PrescriptionIcn,
+    SolidPillIcn,
+    StartOfCommercialisationIcn,
+    SupplyIcn
+  } from '../icons/index.svelte';
+  import {onMount} from "svelte";
+  import Tooltip from "./common/Tooltip.svelte";
+  import {formatTimestamp} from "../utils/timestampHelpers";
+  import {Commercialization, Reimbursement, SupplyProblem} from "@icure/cardinal-be-sam";
+  import {deliveryModusSpecificationCodes} from '../helpers/index.svelte'
 
 
-    let {medication, handleAddPrescription, id, focused, disableHover, short}: {
-        medication: MedicationType,
-        handleAddPrescription: (medication: MedicationType) => void
-        id: string
-        focused?: boolean
-        disableHover?: boolean
-        short?: boolean
-    } = $props();
+  let {medication, handleAddPrescription, id, focused, disableHover, short}: {
+    medication: MedicationType,
+    handleAddPrescription: (medication: MedicationType) => void
+    id: string
+    focused?: boolean
+    disableHover?: boolean
+    short?: boolean
+  } = $props();
 
-    let child: HTMLElement;
-    let distanceToParentTop: number = $state(0);
-    let isExpanded: boolean = $state(false)
-    let showChevron: boolean = !!medication.crmLink || !!medication.patientInformationLeafletLink || !!medication.rmaProfessionalLink || !!medication.spcLink || !!medication.dhpcLink;
+  let child: HTMLElement;
+  let distanceToParentTop: number = $state(0);
+  let isExpanded: boolean = $state(false)
+  let showChevron: boolean = !!medication.crmLink || !!medication.patientInformationLeafletLink || !!medication.rmaProfessionalLink || !!medication.spcLink || !!medication.dhpcLink;
 
-    onMount(() => {
-        const parentTop = child.parentElement?.getBoundingClientRect();
-        const childTop = child.getBoundingClientRect();
-        distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
-    });
+  onMount(() => {
+    const parentTop = child.parentElement?.getBoundingClientRect();
+    const childTop = child.getBoundingClientRect();
+    distanceToParentTop = parentTop && childTop ? childTop.top - parentTop.top : 0;
+  });
 
-    const getSpecialRegulation = (code: number) => {
-        switch (code) {
-            case 1:
-                return 'No narcotic, specially regulated drug'
-            case 2:
-                return 'Narcotic, specially regulated drug'
-            default:
-                return 'No special regulation'
-        }
+  const getSpecialRegulation = (code: number) => {
+    switch (code) {
+      case 1:
+        return 'No narcotic, specially regulated drug'
+      case 2:
+        return 'Narcotic, specially regulated drug'
+      default:
+        return 'No special regulation'
     }
+  }
 
-    const medicationComercialization: Commercialization | undefined = medication.commercializations?.[0]
-    const medicationSupplyProblems: SupplyProblem | undefined = medication.supplyProblems?.[0]
-
-    // console.log(medication.reimbursements)
-    console.log(medication.reimbursements)
+  const medicationComercialization: Commercialization | undefined = medication.commercializations?.[0]
+  const medicationSupplyProblem: SupplyProblem | undefined = medication.supplyProblems?.[0]
+  const medicationReimbursement: Reimbursement | undefined = medication.reimbursements
+  console.log('medicationReimbursement')
+  console.log(medicationReimbursement)
 
 </script>
 
@@ -90,35 +90,35 @@
     <SupplyIcn size={18}/>
 {/snippet}
 {#snippet supplyProblemsContent()}
-    {#if medicationSupplyProblems }
+    {#if medicationSupplyProblem }
         <div class="supplyProblemsTooltip">
             <p class="supplyProblemsTooltip__title supplyProblemsTooltip__title--orange">Temporary supply Problem:</p>
             <div class="supplyProblemsTooltip__content">
-                {#if medicationSupplyProblems.from}
+                {#if medicationSupplyProblem.from}
                     <div>
                         <span>Limited availability since:</span>
-                        <p>{formatTimestamp(medicationSupplyProblems.from)}</p>
+                        <p>{formatTimestamp(medicationSupplyProblem.from)}</p>
                     </div>
                 {/if}
-                {#if medicationSupplyProblems.expectedEndOn}
+                {#if medicationSupplyProblem.expectedEndOn}
                     <div>
                         <span>Presumed end date:</span>
-                        <p>{formatTimestamp(medicationSupplyProblems.expectedEndOn)}</p>
+                        <p>{formatTimestamp(medicationSupplyProblem.expectedEndOn)}</p>
                     </div>
                 {/if}
-                {#if medicationSupplyProblems.reason?.fr}
+                {#if medicationSupplyProblem.reason?.fr}
                     <div>
                         <span>Reason:</span>
-                        <p>{medicationSupplyProblems.reason?.fr}</p>
+                        <p>{medicationSupplyProblem.reason?.fr}</p>
                     </div>
                 {/if}
-                {#if medicationSupplyProblems.impact?.fr}
+                {#if medicationSupplyProblem.impact?.fr}
                     <div>
                         <span>Impact:</span>
-                        <p>{medicationSupplyProblems.impact?.fr}</p>
+                        <p>{medicationSupplyProblem.impact?.fr}</p>
                     </div>
                 {/if}
-                {#if medicationSupplyProblems.impact?.fr === 'Importation possible par le pharmacien'}
+                {#if medicationSupplyProblem.impact?.fr === 'Importation possible par le pharmacien'}
                     <div>
                         <span>Déclaration du prescripteur:</span>
                         <a target="_blank"
@@ -126,10 +126,10 @@
                             le document en .pdf</a>
                     </div>
                 {/if}
-                {#if medicationSupplyProblems.additionalInformation?.fr}
+                {#if medicationSupplyProblem.additionalInformation?.fr}
                     <div>
                         <span>Additional Information:</span>
-                        {#each medicationSupplyProblems.additionalInformation.fr.split("\n") as line}
+                        {#each medicationSupplyProblem.additionalInformation.fr.split("\n") as line}
                             <p>{line}</p>
                         {/each}
                     </div>
@@ -192,7 +192,6 @@
 {#snippet startOfCommercialisation()}
     <StartOfCommercialisationIcn/>
 {/snippet}
-
 {#snippet startOfCommercialisationContent()}
     {#if medicationComercialization }
         <div class="supplyProblemsTooltip">
@@ -323,6 +322,65 @@
     {/if}
 {/snippet}
 
+{#snippet reimbursementIcn()}
+    {#if medicationReimbursement }
+        <div class="textToIcon textToIcon--green">
+            <p>{medicationReimbursement.reimbursementCriterion?.category}</p>
+        </div>
+    {/if}
+{/snippet}
+{#snippet reimbursementsContent()}
+    {#if medicationReimbursement }
+        <div class="supplyProblemsTooltip">
+            <p class="supplyProblemsTooltip__title supplyProblemsTooltip__title--green">Remboursement:</p>
+            <div class="supplyProblemsTooltip__content">
+
+                {#if medicationReimbursement.reimbursementCriterion?.category}
+                    <div>
+                        <span>Catégorie de remboursement:</span>
+                        <p>{medicationReimbursement.reimbursementCriterion.category}</p>
+                    </div>
+                {/if}
+                {#if medicationReimbursement.copayments }
+                    {#each medicationReimbursement.copayments as el }
+                        <div>
+                            {#if el.regimeType === 1}
+                                <span>Copayment type <strong>Preferential</strong>:</span>
+                            {:else if el.regimeType === 2}
+                                <span>Copayment type <strong>Active</strong>:</span>
+                            {/if}
+                            {#if el.feeAmount}
+                                <p class="feeAmount">{Math.round(+el.feeAmount * 100) / 100}€</p>
+                            {/if}
+                        </div>
+                    {/each}
+                {/if}
+                {#if medicationReimbursement.temporary}
+                    <div>
+                        <span>Remboursement temporaire (art. 111):</span>
+                        <p class="textRed">{medicationReimbursement.temporary}</p>
+                    </div>
+                {/if}
+                {#if medicationReimbursement.reimbursementCriterion?.description?.fr}
+                    <div>
+                        <span>Chapitre:</span>
+                        <p>{medicationReimbursement.reimbursementCriterion?.description?.fr}</p>
+                    </div>
+                {/if}
+
+            </div>
+        </div>
+    {:else}
+        <div class="supplyProblemsTooltip">
+            <p class="supplyProblemsTooltip__title supplyProblemsTooltip__title--green">Conditions de prescription</p>
+            <div class="supplyProblemsTooltip__content">
+                <div>
+                    <p>Not applicable</p>
+                </div>
+            </div>
+        </div>
+    {/if}
+{/snippet}
 
 <div class:focused class:isExpanded class:disableHover class='medicationRow' bind:this={child} {id}>
     <div class='header'>
@@ -403,6 +461,12 @@
                                 {/if}
                             </div>
                             <div class="deliveryPrescriptionConditions">
+                                {#if medicationReimbursement}
+                                    <Tooltip contentSnippet={reimbursementsContent}
+                                             iconSnippet={reimbursementIcn}
+                                             orientation={distanceToParentTop > 65 ? 'tr' : 'br'}/>
+
+                                {/if}
                                 {#if medication.deliveryModusCode}
                                     <Tooltip contentSnippet={deliveryConditionsContent}
                                              iconSnippet={deliveryConditionsIcn}
@@ -419,44 +483,81 @@
                     </div>
                     <p class='header__medication__content__heading__activeIngredient'>{medication.activeIngredient}</p>
                 </div>
-                {#if medication.price}
-                    <div class='header__medication__content__description'>
+                <div class='header__medication__content__description'>
+                    {#if medication.price}
                         <div class='header__medication__content__description__item price'>
                             <span>Prix:</span>
                             <p>{medication.price}</p>
                         </div>
-                    </div>
-                {/if}
-                {#if isExpanded || !short}
-                    <div class='header__medication__content__description'>
-                        <div class='header__medication__content__description__item delivery'>
-                            <span>Conditions de livraison:</span>
-                            {#if medication.deliveryModusCode }
-                                {#if !!medication.deliveryModusSpecification}
-                                    <p>{medication.deliveryModus} / {medication.deliveryModusSpecification}</p>
-                                {:else}
-                                    <p>{medication.deliveryModus}</p>
-                                {/if}
-                            {:else}
+                        <div class='header__medication__content__description__item price'>
+                            <span>Reimbursement:</span>
+                            {#if medicationReimbursement}
                                 <div class="textToIcon textToIcon--green">
-                                    <p>Free of prescription</p>
+                                    <p>{medicationReimbursement?.reimbursementCriterion?.category}</p>
+                                </div>
+                            {:else}
+                                <div class="textToIcon textToIcon--gray">
+                                    <p>Non</p>
                                 </div>
                             {/if}
                         </div>
+                    {/if}
+                    <div class='header__medication__content__description__item'>
+                        <span>Conditions de livraison:</span>
+                        {#if medication.deliveryModusCode }
+                            <div class="textToIcon textToIcon--orange">
+                                <p>{medication.deliveryModusCode}</p>
+                            </div>
+                        {:else}
+                            <div class="textToIcon textToIcon--green">
+                                <p>Free of prescription</p>
+                            </div>
+                        {/if}
                     </div>
-                    <div class='header__medication__content__description'>
-                        <div class='header__medication__content__description__item prescription'>
-                            <span>Conditions de prescription:</span>
-                            {#if medication.deliveryModusSpecificationCode && medication.deliveryModusSpecificationCode in deliveryModusSpecificationCodes}
-                                <p>{deliveryModusSpecificationCodes[medication.deliveryModusSpecificationCode].fr}</p>
-                            {:else}
-                                <div class="textToIcon textToIcon--green">
-                                    <p>Not applicable</p>
-                                </div>
-                            {/if}
-                        </div>
+                    <div class='header__medication__content__description__item'>
+                        <span>Conditions de prescription:</span>
+                        {#if medication.deliveryModusSpecificationCode && medication.deliveryModusSpecificationCode in deliveryModusSpecificationCodes}
+                            <div class="textToIcon textToIcon--red">
+                                <p>{medication.deliveryModusSpecificationCode}</p>
+                            </div>
+                        {:else}
+                            <div class="textToIcon textToIcon--green">
+                                <p>Not applicable</p>
+                            </div>
+                        {/if}
                     </div>
-                {/if}
+                </div>
+
+                <!--{#if isExpanded || !short}-->
+                <!--    <div class='header__medication__content__description'>-->
+                <!--        <div class='header__medication__content__description__item delivery'>-->
+                <!--            <span>Conditions de livraison:</span>-->
+                <!--            {#if medication.deliveryModusCode }-->
+                <!--                {#if !!medication.deliveryModusSpecification}-->
+                <!--                    <p>{medication.deliveryModus} / {medication.deliveryModusSpecification}</p>-->
+                <!--                {:else}-->
+                <!--                    <p>{medication.deliveryModus}</p>-->
+                <!--                {/if}-->
+                <!--            {:else}-->
+                <!--                <div class="textToIcon textToIcon&#45;&#45;green">-->
+                <!--                    <p>Free of prescription</p>-->
+                <!--                </div>-->
+                <!--            {/if}-->
+                <!--        </div>-->
+                <!--    </div>-->
+                <!--    <div class='header__medication__content__description'>-->
+                <!--        <div class='header__medication__content__description__item prescription'>-->
+                <!--            <span>Conditions de prescription:</span>-->
+                <!--            {#if medication.deliveryModusSpecificationCode && medication.deliveryModusSpecificationCode in deliveryModusSpecificationCodes}-->
+                <!--                <p>{deliveryModusSpecificationCodes[medication.deliveryModusSpecificationCode].fr}</p>-->
+                <!--            {:else}-->
+                <!--                <div class="textToIcon textToIcon&#45;&#45;green">-->
+                <!--                    <p>Not applicable</p>-->
+                <!--                </div>-->
+                <!--            {/if}-->
+                <!--        </div>-->
+                <!--    </div>-->
+                <!--{/if}-->
             </div>
         </div>
         {#if showChevron}
@@ -503,6 +604,13 @@
                         (DHPC)</a>
                 {/if}
             </div>
+
+            {#if medicationReimbursement}
+                <div class="content__divider"></div>
+                {@render reimbursementsContent()}
+
+            {/if}
+
             <div class="content__divider"></div>
             {@render prescriptionConditionsContent()}
 
@@ -521,7 +629,6 @@
                 <div class="content__divider"></div>
                 {@render startOfCommercialisationContent()}
             {/if}
-
 
 
         </div>
@@ -888,8 +995,12 @@
       background-color: #33B96B;
     }
 
+    &--gray {
+      background-color: #7E827F;
+    }
+
     p {
-      font-size: 11px;
+      font-size: 11px !important;
       font-weight: 600;
       color: white !important;
     }
