@@ -15,7 +15,6 @@
   } from "./lib/fhc";
   import Button from "./src/components/common/Button.svelte";
   import Input from "./src/components/common/Input.svelte";
-  import {Prescription} from "@icure/be-fhc-api/model/Prescription";
   import PrescriptionPrintModal from "./src/components/PrescriptionPrintModal.svelte";
 
   let sdk: any;

@@ -286,12 +286,12 @@ __metadata:
 
 "@icure/cardinal-be-sam@file:./tsPackage::locator=cardinal-prescription%40workspace%3A.":
   version: 0.0.0-unspecified
-  resolution: "@icure/cardinal-be-sam@file:./tsPackage#./tsPackage::hash=02a154&locator=cardinal-prescription%40workspace%3A."
+  resolution: "@icure/cardinal-be-sam@file:./tsPackage#./tsPackage::hash=5741b8&locator=cardinal-prescription%40workspace%3A."
   dependencies:
     "@js-joda/core": "npm:3.2.0"
     format-util: "npm:^1.0.5"
-    ws: "npm:8.17.1"
-  checksum: 10c0/a226a0b7803999ae9eb33369324864e68dd396b0c8fe5260f7c0bf22e31ba94115d356fcfaad27b5a946f959c11dcf8e45e55d48a167b07b656c7b44994bb9b0
+    ws: "npm:8.18.0"
+  checksum: 10c0/c85461a13ba4f2db075f70712386f8bc0e402aac98d7e9fc7865c97facf71fff18930054c6dddb855d14b9f6bfa4bd72660bee6e5235542e36947c5e50344e25
   languageName: node
   linkType: hard
 
@@ -2252,22 +2252,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.17.1":
-  version: 8.17.1
-  resolution: "ws@npm:8.17.1"
-  peerDependencies:
-    bufferutil: ^4.0.1
-    utf-8-validate: ">=5.0.2"
-  peerDependenciesMeta:
-    bufferutil:
-      optional: true
-    utf-8-validate:
-      optional: true
-  checksum: 10c0/f4a49064afae4500be772abdc2211c8518f39e1c959640457dcee15d4488628620625c783902a52af2dd02f68558da2868fd06e6fd0e67ebcd09e6881b1b5bfe
-  languageName: node
-  linkType: hard
-
-"ws@npm:^8.18.0":
+"ws@npm:8.18.0, ws@npm:^8.18.0":
   version: 8.18.0
   resolution: "ws@npm:8.18.0"
   peerDependencies:
