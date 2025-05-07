@@ -5,18 +5,24 @@ Cardinal prescription module written in Svelte.
 Lets you search in the Belgian SAM (Source Authentique de Médicaments) 2 (v5/v6).
 and generate prescription with structured and unstructured posology.
 
-This module interacts with Recip-e t- send the prescription.
+This module interacts with Recip-e to send the prescription.
 
-You'll need t- pass the SAM and Recip-e certification t- use this module in production.
+You'll need to pass the SAM and Recip-e certification to use this module in production.
 
 ## Modules
 
 - Save, retrieve while encrypting/decrypting E-health certificate : `CertificateUpload`
 - Search in SAM (AMPPs, VMP groups, NMPs, ...) : `PrescribedMedicationsSearch`
 - Generate prescription with structured and unstructured posology : `MedicationPrescriptionModal`
-- Display generated prescriptions. Generate, send and print prescriptions t- Recip-e : `Prescriptions`
+- Display generated prescriptions. Generate, send and print prescriptions to Recip-e : `Prescriptions`
 - Display a printable version of the prescriptions : `PrescriptionPrintModal`
-- 
+
+## Requirements
+
+You will need a valid acceptance/production E-health certificate to use this module.
+
+You will also need valid iCure credentials. You can obtain them by registering an account on https://cockpit.icure.dev 
+
 ## Usage
 
 ### CertificateUpload
@@ -24,7 +30,7 @@ You'll need t- pass the SAM and Recip-e certification t- use this module in prod
 ```sveltehtml
 <CertificateUpload handleSave={(id, password) =>{
     // At this point, the certificate is saved encrypted using a key derived from password
-    // in indexedDB under the key id. You probably want t- d- something with the id and password
+    // in indexedDB under the key id. You probably want to d- something with the id and password
 }}/>
 ```
 ### PrescribedMedicationsSearch
@@ -32,15 +38,27 @@ You'll need t- pass the SAM and Recip-e certification t- use this module in prod
 ```sveltehtml
 
 <PrescribeMedicationsSearch
+        sdk={sdk /* SamV2Api */}
         deliveryEnvironment="P" {(medication: MedicationType) => {
-            // T- be passed t- the MedicationPrescriptionModal
+            // This callback allows you to recover the medication to be passed to the MedicationPrescriptionModal
         }}
         disableInputEventsTracking={medicationPrescriptionModalIsDisplayed}
         short={true || false}
 />
 ```
 
-The values t- be used for deliveryEnvironment are:
+The sdk must be initialised in your app
+```javascript
+const sdk = (await CardinalBeSamSdk.initialize(
+    undefined,
+    'https://api.icure.cloud',
+    new Credentials.UsernamePassword(
+        username, password
+    )
+)).sam
+```
+
+The values to be used for deliveryEnvironment are:
 
 - ‘P’ for Public,
 - ‘A’ for Ambulatory,
@@ -78,7 +96,7 @@ or
                 //modify the prescription in the prescribedMedications list 
             }}
                handleSendPrescriptions={() => {
-                //Send prescribedMedications t- recipe
+                //Send prescribedMedications to recipe
             }}
                handlePrintPrescriptions={() => {
                 //Print prescribedMedications
@@ -94,16 +112,16 @@ or
 }}/>
 ```
 
-## Status of Cardinal Prescription with regards t- updated requirements for SAM usage
+## Status of Cardinal Prescription with regards to updated requirements for SAM usage
 
-If applicable and available in the SAMv2 database, the following information needs t- be visible t- the prescriber at the moment he selects a medicinal product.
-The information has t- be shown in a clear, proactive way next t- the concerned pack size (e.g. in the form of a sign indicating additional information via a hovering action).
+If applicable and available in the SAMv2 database, the following information needs to be visible to the prescriber at the moment he selects a medicinal product.
+The information has to be shown in a clear, proactive way next to the concerned pack size (e.g. in the form of a sign indicating additional information via a hovering action).
 
-- [x] Link t- the leaflet = link t- the url of the leaflet as published on the FAMHP website. The leaflet is available in French, Dutch and German.
-- [x] Link t- the SPC = link t- the url of the SPC as published on the FAMHP website. The SPC is available in French and Dutch.
+- [x] Link to the leaflet = link to the url of the leaflet as published on the FAMHP website. The leaflet is available in French, Dutch and German.
+- [x] Link to the SPC = link to the url of the SPC as published on the FAMHP website. The SPC is available in French and Dutch.
 - [x] Black triangle = visualisation of the black triangle symbol
-- [x] _NEW_ Link t- RMA material = visualisation of the symbol used on RMA material and link t- the url of the section on the FAMHP website where documents related t- RMA material are published. An url is available t- the concerned section in French, Dutch and German.
-- [x] _NEW_ Link t- DHPC = link t- the url of the section on the FAMHP website where the DHPC communications are published. An url is available t- the concerned section in French, Dutch and German.
+- [x] _NEW_ Link to RMA material = visualisation of the symbol used on RMA material and link to the url of the section on the FAMHP website where documents related to RMA material are published. An url is available to the concerned section in French, Dutch and German.
+- [x] _NEW_ Link to DHPC = link to the url of the section on the FAMHP website where the DHPC communications are published. An url is available to the concerned section in French, Dutch and German.
 - [x] _NEW_ Temporary supply Problem = symbol indicating there is an actual temporary supply problem of the concerned pack size of the medicinal product.
    Additional information (e.g. via hovering) contains the following data:
    - start date supply problem,
@@ -119,28 +137,28 @@ The information has t- be shown in a clear, proactive way next t- the concerned 
    - reason end of commercialisation, impact end of commercialisation,
    - additional information concerning alternative medicinal products or treatments.
 - [x] _NEW_ Start of commercialisation in the future = symbol indicating the future start date of commercialisation of the concerned pack size of the medicinal product.
-- [ ] _NEW_ Doping status: The applicable WADA code(s) (e.g. A, AO, B, … ) should be clearly visible. Note that none, one or multiple WADA codes can be applicable. The WADA code(s) are linked t- a VMP and can thus be assigned t- any AMPP (package) or generalized t- any VMP-group (i.e. VOS/DCI group). When hovering over a WADA code, the corresponding short description (field “name”) should be shown t- the user (e.g. “Anabolica, te allen tijde verboden” in Dutch and “Anabolisants, interdits en toutes circonstances” in French).
+- [ ] _NEW_ Doping status: The applicable WADA code(s) (e.g. A, AO, B, … ) should be clearly visible. Note that none, one or multiple WADA codes can be applicable. The WADA code(s) are linked to a VMP and can thus be assigned to any AMPP (package) or generalized to any VMP-group (i.e. VOS/DCI group). When hovering over a WADA code, the corresponding short description (field “name”) should be shown to the user (e.g. “Anabolica, te allen tijde verboden” in Dutch and “Anabolisants, interdits en toutes circonstances” in French).
 - [x] _NEW_ VMP-group: The full name of the VMP-group (the field “name”) should be visible or easily accessible. This name should never be changed nor truncated, and its letter case should be preserved.
-    When applicable, the NOVOS status with reason (use the field “N- generic prescription reason”) and the NOSWITCH status with reason (use the field “N- switch reason”) should be visible next t- the name (statuses) and easily retrievable by e.g. hovering over the status (reasons). Moreover, it should be easy for the user t- retrieve the complete list of all branded products (i.e. AMP(P)s) belonging t- this VMP-group.
-    - Clicking through from specialty t- a list of products from the same VMP group can be an alternative t- showing all products in VMP group
+    When applicable, the NOVOS status with reason (use the field “N- generic prescription reason”) and the NOSWITCH status with reason (use the field “N- switch reason”) should be visible next to the name (statuses) and easily retrievable by e.g. hovering over the status (reasons). Moreover, it should be easy for the user to retrieve the complete list of all branded products (i.e. AMP(P)s) belonging to this VMP-group.
+    - Clicking through from specialty to a list of products from the same VMP group can be an alternative to showing all products in VMP group
 - [x] _NEW_ VMP: The official full name of the VMP (field “name”) should be visible or easily accessible. This name should never be changed nor truncated, and its letter case should be preserved.
-    Moreover, it should be easy for the user t- retrieve the complete list of all branded products (i.e. AMP(P)s) belonging t- this VMP.
-- [x] A link t- the online BCFI/CBIP Repertorium should be visible and clickable. For upto-date information on how t- link t- the online Repertorium, please consult https://www.bcfi.be/nl/download#link (NL) or https://www.bcfi.be/fr/download#link (FR).
-- [x] _NEW_ Conditions of delivery/Conditions of prescription = the description related t- conditions of delivery and/or prescription available in the field Delivery Modus Specification in SAMv2 needs t- be added t- the application. This information is available in French, Dutch, German and English.
-- [x] _NEW_ Information related t- risk minimization activities = content of the field RMA key messages (if applicable)
+    Moreover, it should be easy for the user to retrieve the complete list of all branded products (i.e. AMP(P)s) belonging to this VMP.
+- [x] A link to the online BCFI/CBIP Repertorium should be visible and clickable. For upto-date information on how to link to the online Repertorium, please consult https://www.bcfi.be/nl/download#link (NL) or https://www.bcfi.be/fr/download#link (FR).
+- [x] _NEW_ Conditions of delivery/Conditions of prescription = the description related to conditions of delivery and/or prescription available in the field Delivery Modus Specification in SAMv2 needs to be added to the application. This information is available in French, Dutch, German and English.
+- [x] _NEW_ Information related to risk minimization activities = content of the field RMA key messages (if applicable)
     ● This field contains information that requires the doctor’s attention at the time of prescription.
     ● The full content of this field should therefore be displayed in a clear manner and at all times.
-    ● In case this field is empty, nothing needs t- be done.
+    ● In case this field is empty, nothing needs to be done.
     EXAMPLE: see document with examples, published on SAMPortal as of 31/7/2024.
 - [ ] _NEW_ Reimbursed = symbol indicating if the concerned pack size of the medicinal product is reimbursed or not.
-- [ ] _NEW_ When the medicine is reimbursed, the following data has t- be shown:
+- [ ] _NEW_ When the medicine is reimbursed, the following data has to be shown:
     - Chapter
       - Chapter I = medicines reimbursed without restrictions
       - Chapter II = medicines reimbursed under certain conditions (check ‘a posteriori’)
       - Chapter III = perfusions (solutions and liquids) reimbursed without restrictions
       - Chapter IV = medicines reimbursed with restrictions, after a prior authorization (check ‘a priori’) – link with CIVARS
       - Chapter IV-bis = essential medicines that are not registered in Belgium, reimbursed after import with restrictions
-      - Chapter VIII = medicines reimbursed after execution of an associated predictive test and linked t- CIVARS (and PITTER register)
+      - Chapter VIII = medicines reimbursed after execution of an associated predictive test and linked to CIVARS (and PITTER register)
     - Reimbursement Category
       - A = life saving medicines
       - B = therapeutically important medicines

@@ -4,7 +4,7 @@
   import MedicationPrescriptionModal from "./src/components/MedicationPrescriptionModal.svelte";
   import Prescriptions from "./src/components/Prescriptions.svelte";
   import {onMount} from "svelte";
-  import {getSamVersion, initialiseSdk} from "./lib/cardinal";
+  import {getSamVersion} from "./lib/cardinal";
   import type {MedicationType, PrescribedMedicationType} from "./src/types/index.svelte";
   import CertificateUpload from "./src/components/CertificateUpload.svelte";
   import {
@@ -16,8 +16,26 @@
   import Button from "./src/components/common/Button.svelte";
   import Input from "./src/components/common/Input.svelte";
   import PrescriptionPrintModal from "./src/components/PrescriptionPrintModal.svelte";
+  import {CardinalBeSamSdk, Credentials, type SamV2Api} from "@icure/cardinal-be-sam";
 
-  let sdk: any;
+  const initialiseSdk = async () => {
+      try {
+          const sdk = await CardinalBeSamSdk.initialize(
+              undefined,
+              'https://nightly.icure.cloud', //'http://127.0.0.1:16043',
+              new Credentials.UsernamePassword(
+                  'larisa.shashuk+medicationsTest@gmail.com',
+                  '75b00167-a1e3-4825-b262-396617c71cab'
+              )
+          );
+          return sdk.sam as SamV2Api;
+      } catch (error) {
+          console.error('Error initializing SDK:', error);
+      }
+  };
+
+
+  let sdk: SamV2Api | undefined = $state()
   let samVersion: string | undefined = $state()
   let certificateUploaded: boolean = $state(false)
   let certificateValid: boolean | undefined = $state(undefined)
@@ -62,10 +80,20 @@
   });
 
   $effect(() => {
-    setTimeout(() => {
-      getSamVersion(sdk).then(async (res) => {
-        if (res?.version) samVersion = res.version
-      })
+      function loadVersion() {
+          if (sdk) {
+              getSamVersion(sdk).then(async (res) => {
+                  if (res?.version) samVersion = res.version
+              })
+          } else {
+              setTimeout(() => {
+                  loadVersion();
+              }, 100)
+          }
+      }
+
+      setTimeout(() => {
+        loadVersion();
     }, 100)
   });
 
@@ -166,7 +194,7 @@
 
         <p>Sam version: {samVersion}</p>
         <div class="divider"></div>
-        <PrescribeMedicationsSearch deliveryEnvironment="P" short={true} {handleAddPrescription}
+        <PrescribeMedicationsSearch sdk={sdk} deliveryEnvironment="P" short={true} {handleAddPrescription}
                                     disableInputEventsTracking={showMedicationPrescriptionModal}/>
 
         {#if !!medicationToPrescribe && showMedicationPrescriptionModal}
